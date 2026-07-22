@@ -1,29 +1,84 @@
+# Faster Loadin' 'n' Savin'
 
-# Save & Load Accelerator for SKSE Cosaves
+**Faster Loadin' 'n' Savin' is a maintenance fork of [Save and Load Accelerator for SKSE Cosaves](https://github.com/just-harry/save-load-accelerator-for-skse-cosaves), originally created by Harry Gillanders (`just-harry`).** The upstream code and this fork are distributed under the BSD Zero Clause License (0BSD). The fork source is available at [https://github.com/ShugokiFable/Faster-Loadin-n-Savin](https://github.com/ShugokiFable/Faster-Loadin-n-Savin).
 
-This is a plugin for [SKSE64](https://skse.silverlock.org/) that aims to improve the performance of saving and loading SKSE cosave files.
+The public name is different from the original mod. The runtime DLL and INI intentionally retain the technical filenames `Save&LoadAcceleratorForSKSECosaves.dll` and `Save&LoadAcceleratorForSKSECosaves.ini` because the compiled plugin expects those names.
 
-## Building
+## What it changes
 
-### Requirements
+This SKSE plugin accelerates **SKSE cosave** serialization and loading. It does not accelerate or rewrite Skyrim's main `.ess` save format.
 
-- Windows PowerShell 5.1 or [PowerShell 7-and-later](https://learn.microsoft.com/powershell/scripting/install/installing-powershell).
-- The [LDC D compiler](https://github.com/ldc-developers/ldc).
-- The [Clang C++ compiler](https://releases.llvm.org/).
-- A standard environment (e.g. the [MSVC Build Tools](https://learn.microsoft.com/cpp/build/building-on-the-command-line)) for targeting x86-64 Windows, specifically: having the Windows import libraries available via the library-path; having `rc` available via the `PATH`.
-- (Optional) [`7za`](https://www.7-zip.org/download.html) being available via the `PATH`, for packaging the built plugins.
+The maintenance fork adds:
 
-### Procedure
+- sibling temporary-file writes followed by `MoveFileExA(..., MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)` replacement;
+- buffered, sequential, exact-length cosave loading;
+- corrected committed-buffer sizing for padded writes;
+- a Universal x86-64-v2 build as the installer default;
+- an optional x86-64-v3 High-End build;
+- clean, reproducible release packaging with hashes and manifests.
 
-In an environment for targeting x86-64 Windows, run the `build.ps1` script found in the root of this repository.
-The resulting DLLs will be available in the `build/release` directory.
+## Safety scope and limitations
 
-To package the built DLLs into archives suitable for installation, run the `package.ps1` script found in the root of this repository.
-The resulting archives will be available in the `package/release` directory.
+Atomic cosave replacement means the previous cosave is not truncated before the replacement file has been fully written and closed. This **reduces the risk of a destroyed or truncated SKSE cosave when saving is interrupted**.
 
-## Licence
+It is not a transaction spanning both Skyrim's `.ess` file and the SKSE cosave. It cannot guarantee that every third-party SKSE serialization callback produced logically complete data. The experimental parallel-saving mode remains disabled by default because third-party callbacks cannot be assumed thread-safe.
 
-Unless otherwise specified, everything in this repository is licensed under the terms of the [BSD Zero Clause License](https://spdx.org/licenses/0BSD.html).
+No save cleaning or conversion is required when installing, updating, or uninstalling this plugin.
+
+## Installation
+
+Install the archive with Mod Organizer 2, Vortex, or another FOMOD-capable manager.
+
+1. Select the detected Skyrim runtime.
+2. Keep **Universal (Recommended)** unless you deliberately want the optional High-End build.
+3. Confirm that the installed DLL is at `Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll`.
+
+The High-End x86-64-v3 build requires an AVX2-class CPU, broadly AMD Zen 2 or newer or Intel Haswell or newer. It may provide little or no measurable improvement for a given load order.
+
+## Compatibility
+
+The plugin is standalone apart from SKSE and a compatible DLL preloader. It does not require NextGen Disk Cache. Parallel saving should remain disabled unless every participating SKSE plugin is known to be thread-safe during serialization.
+
+## Verifying releases
+
+`tools/verify-release-binaries.py` can produce DLL manifests, inspect static imports, and compare PE sections:
+
+```text
+python tools/verify-release-binaries.py manifest <extracted-release>
+python tools/verify-release-binaries.py imports <installed-dll>
+python tools/verify-release-binaries.py compare <old-dll> <new-dll> --strict
+```
+
+Static import inspection is evidence, not a proof of every capability a native binary could exercise. Version 1.5.1 is supported by the complete published source, section-level binary comparisons, release hashes, and the generated manifest. See [`VERIFYING-RELEASES.md`](VERIFYING-RELEASES.md).
+
+## Release provenance
+
+Version 1.5.1 contains **no save/load implementation changes from 1.4.0 or 1.5.0**. It hardens the installer, packaging, permissions guidance, credits, and verification language. The shipped 1.5.1 DLLs retain the same executable `.text` section as their corresponding 1.5.0 DLLs; only version metadata, the sanitized embedded PDB path, and the PE checksum differ.
+
+## Building and packaging
+
+Requirements:
+
+- Windows PowerShell 5.1 or PowerShell 7+
+- LDC (`ldc2`)
+- Windows SDK resource compiler (`rc.exe`)
+- Clang C++ or MSVC `cl.exe`
+- `lld-link` or MSVC `link.exe`
+- Python 3.8+ for release verification
+
+Prepare a release with:
+
+```powershell
+./scripts/update-version-number.ps1 1.5.1.0
+./package-release.ps1 -Version 1.5.1
+```
+
+`package.ps1` is retained as a compatibility wrapper and delegates to `package-release.ps1`; it no longer creates PDB-bearing legacy packages.
+
+## License and credits
+
+See [`LICENSE`](LICENSE) and [`CREDITS.md`](CREDITS.md). The 0BSD license permits use, copying, modification, and redistribution with or without fee. Nexus permissions should mirror those terms.
+
 
 ## Hitchhiker's Guide to the Codebase
 

@@ -90,6 +90,15 @@ version (Windows)
 	extern(Windows) NTSTATUS NtOpenFile (scope HANDLE* FileHandle, ACCESS_MASK DesiredAccess, scope OBJECT_ATTRIBUTES* ObjectAttributes, IO_STATUS_BLOCK* IoStatusBlock, uint ShareAccess, uint OpenOptions) nothrow @nogc;
 
 
+	extern(Windows) BOOL MoveFileExA (scope const(char)* lpExistingFileName, scope const(char)* lpNewFileName, uint dwFlags) nothrow @nogc;
+	extern(Windows) BOOL DeleteFileA (scope const(char)* lpFileName) nothrow @nogc;
+
+
+	enum uint MOVEFILE_REPLACE_EXISTING = 0x00000001;
+	enum uint MOVEFILE_COPY_ALLOWED = 0x00000002;
+	enum uint MOVEFILE_WRITE_THROUGH = 0x00000008;
+
+
 	extern(Windows) NTSTATUS NtWriteFile (HANDLE FileHandle, HANDLE Event, PIO_APC_ROUTINE ApcRoutine, void* ApcContext, IO_STATUS_BLOCK* IoStatusBlock, const(void)* Buffer, uint Length, scope const(LARGE_INTEGER)* ByteOffset, scope const(uint)* Key) nothrow @nogc;
 	extern(Windows) NTSTATUS NtReadFile (HANDLE FileHandle, HANDLE Event, PIO_APC_ROUTINE ApcRoutine, void* ApcContext, IO_STATUS_BLOCK* IoStatusBlock, void* Buffer, uint Length, scope const(LARGE_INTEGER)* ByteOffset, scope const(uint)* Key) nothrow @nogc;
 

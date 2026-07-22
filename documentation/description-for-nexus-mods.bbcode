@@ -1,137 +1,102 @@
-[size=5][b][u]Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.)[/u][/b][/size]
+[center][size=6][b]Faster Loadin and Savin[/b][/size]
+[size=4]A maintained 0BSD fork of Save and Load Accelerator for SKSE Cosaves[/size][/center]
 
-This plugin aims to make heavily-modded games save and load more quickly.
+[quote][b]Credit and provenance[/b]
+This is a maintenance fork of [url=https://github.com/just-harry/save-load-accelerator-for-skse-cosaves]Save and Load Accelerator for SKSE Cosaves[/url], originally created by Harry Gillanders (just-harry). The public name was changed to distinguish the fork. The original code and the fork's modifications remain licensed under 0BSD.
 
-The SKSE cosave is a sidecar file that is saved beside the game's actual save file.
-This plugin accelerates the saving/loading of only the SKSE cosave: it does nothing for the actual save file.
-Hence the acceleration of loading is less dramatic than the acceleration of saving.
+Fork source: [url=https://github.com/ShugokiFable/Faster-Loadin-n-Savin]https://github.com/ShugokiFable/Faster-Loadin-n-Savin[/url][/quote]
 
-[size=4][b][u]Preamble[/u][/b][/size]
-SKSE is a fantastic bit of kit: almost every non-trivial Skyrim mod owes its very existence to it.
-In fact, the same is true for almost every game of Bethesda Game Studios from Oblivion onwards.
-The modding community—authors and users alike—truly owe a great debt to all the people behind the Script Extender series, for without them, where would we be?
+[size=4][b][u]What is new in 1.5.1[/u][/b][/size]
+[list]
+[*][b]Real CPU selection in the FOMOD.[/b] Universal x86-64-v2 is recommended. High-End x86-64-v3 is an optional AVX2-class build and overlays only the selected game version.
+[*][b]Sanitized build metadata.[/b] User-specific absolute PDB paths are no longer exposed in the public DLLs.
+[*][b]Reproducible release packaging.[/b] The release script now matches the public archive layout, validates all eight game targets and both CPU profiles, rejects development artifacts, and generates hashes and a DLL manifest.
+[*][b]Clearer safety language.[/b] Atomic replacement reduces the risk of a truncated or destroyed SKSE cosave, but it is not an atomic transaction with Skyrim's main .ess file.
+[*][b]Clearer verification language.[/b] Static import inspection is useful evidence, not absolute proof of every capability a native binary could exercise.
+[*][b]Explicit credits and permissions guidance.[/b] The repository and Nexus permissions are intended to remain consistent with 0BSD.
+[*][b]No save/load behavior change from 1.4.0 or 1.5.0.[/b] The 1.5.1 DLLs contain the same executable code and are restamped with corrected release metadata.
+[/list]
 
-The Script Extenders' saving system is an exception to this praise: it frankly isn't very good.
-It can require dozens of seconds to save a single-digit-number of megabytes on veritable supercomputers.
-This is because it effectively hasn't changed at all† since the days of the Oblivion Script Extender; designed in the time of 5,400 RPM hard-drives, cheap(ish) syscalls, and if I may be so bold: perhaps more naïve programmers ;).
+[size=4][b][u]What the plugin does[/u][/b][/size]
+This plugin accelerates the saving and loading of [b]SKSE cosave files[/b]. It does not replace or rewrite Skyrim's main .ess save format.
 
-† I'm not exaggerating here, most of the core code of the saving system specifically is identical to what it was in 2008.
+SKSE plugins serialize data through many small API calls. This plugin patches SKSE's cosave routines at runtime so plugin data is assembled in memory and written more efficiently.
 
-Before I continue, I'd like to emphasise that I hold nothing but respect for the developers of the Script Extender series.
-The existence of this plugin, and the words I write, are not intended as an attack or a derisory action onto them.
-Likewise, do not go and harangue the Script Extender developers about slow cosave saving: they are already aware.
+The maintenance fork also changes the disk path used by its optimized implementation:
+[list]
+[*]A new cosave is written to a sibling temporary file.
+[*]The previous cosave is retained while the temporary file is being written.
+[*]After the temporary file is complete and closed, Windows replaces the previous cosave with it using write-through replacement.
+[*]Cosave loading uses buffered sequential reads of the exact file length.
+[/list]
 
-The tone I intend this document to be read with is that which a schoolteacher might use to cheerfully admonish a schoolboy with.
-For, whilst the SKSE developers are [i]obviously[/i] very highly capable developers, they've done their skills a disservice in this instance by designing and implementing an API, for a performance-critical process, wherein the most natural, pleasant, and easy method of usage is also the slowest possible method of usage, and then by leaving that as the state of affairs for seventeen years.
+[size=4][b][u]Safety and limitations[/u][/b][/size]
+Atomic replacement [b]reduces the risk[/b] that an interrupted save destroys or truncates the previous SKSE cosave. It does not make the .ess and .skse files one indivisible transaction, and it cannot guarantee that every third-party SKSE plugin callback produced logically complete data.
 
-What this plugin does is rewrite SKSE's saving/loading code to be as fast it should be.
+[b]Experimental parallel saving remains disabled by default.[/b] It can run third-party serialization callbacks concurrently, and those callbacks cannot be assumed thread-safe. Leave it disabled unless you understand the risk and have verified your participating plugins.
 
-[size=4][b][u]Uninstallation[/u][/b][/size]
-This plugin is safe to uninstall at any time.
-Saves made with this plugin installed can be loaded without this plugin installed, that is to say, it is safe to try to this plugin out and then uninstall it later.
+The plugin does not change the cosave format. No save cleaning or new game is required when installing, updating, or uninstalling it.
 
 [size=4][b][u]Requirements[/u][/b][/size]
 [list]
-[*] A DLL preloader: either the [url=https://www.nexusmods.com/skyrimspecialedition/mods/17230]"SSE Engine Fixes - SKSE64 Preloader"[/url], or the [url=https://www.nexusmods.com/skyrimspecialedition/mods/10546]"DLL Plugin Loader"[/url] will do.
-[*] [url=https://skse.silverlock.org/]SKSE[/url] (duh).
+[*][url=https://skse.silverlock.org/]SKSE[/url] or SKSEVR matching your game runtime.
+[*]A compatible DLL preloader, such as the preloader supplied with SSE Engine Fixes or DLL Plugin Loader.
 [/list]
+
 [size=4][b][u]Installation[/u][/b][/size]
-After ensuring that a DLL preloader is installed, this plugin can be installed like any other via your mod-manager of choice.
+Install with Mod Organizer 2, Vortex, or another FOMOD-capable manager.
 
-The plugin will be installed correctly by default by all good mod-managers.
-When installed correctly, the path of the DLL relative to the game's folder will be "Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll".
+[list=1]
+[*]Select your Skyrim runtime. The installer should recommend the detected version.
+[*]Select [b]Universal (Recommended)[/b] unless you deliberately want the High-End build.
+[*]Confirm the installed path is [code]Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll[/code]
+[/list]
 
-Also, please note that only the versions for Skyrim AE v1.6.1170 and Skyrim SE v1.5.97 have been tested by me, all other version are untested (but should work).
+[b]Universal x86-64-v2[/b] is the safe default.
 
-[size=4][b][u]Usage[/u][/b][/size]
-This plugin is active by default when it is installed.
-
-By default, the time taken to save or load a game will be logged to the in-game console.
-
-The "Save&LoadAcceleratorForSKSECosaves.ini" file next to the "Save&LoadAcceleratorForSKSECosaves.dll" file can be edited to configure this plugin.
-
-If you would like to eke out even more speed for saving the game, the experimental parallel-saving feature can be enabled via the "Save&LoadAcceleratorForSKSECosaves.ini" file.
+[b]High-End x86-64-v3[/b] is intended for AVX2-class CPUs, broadly AMD Zen 2 or newer and Intel Haswell or newer. It may provide little or no measurable improvement depending on the load order and cosave workload. Selecting it on unsupported hardware can cause an illegal-instruction crash.
 
 [size=4][b][u]Compatibility[/u][/b][/size]
+The plugin is standalone apart from SKSE and a DLL preloader. It does not require NextGen Disk Cache, and NextGen Disk Cache does not require it. Version 1.2.1 or later of NextGen Disk Cache avoids rewriting save-related file flags and is the intended combination.
 
-This plugin should be compatible with just about everything, with the exception of other plugins that patch or hook SKSE's code, potentially.
-In practice, patching and hooking SKSE itself is very rare.
+Potential conflicts are limited mainly to other DLL plugins that patch the same SKSE save/load routines.
 
-To answer a frequent question: this plugin is compatible with [url=https://www.nexusmods.com/skyrimspecialedition/mods/122343]Skyrim Save System Overhaul (SSSO)[/url].
+Binaries are supplied for:
+[list]
+[*]Skyrim AE 1.6.1170, 1.6.1130, 1.6.640, and 1.6.353
+[*]Skyrim SE 1.5.97
+[*]Skyrim VR 1.4.15
+[*]GOG 1.6.1179 and 1.6.659
+[/list]
+Not every target has been independently runtime-tested by the maintenance fork. Report the exact game version, SKSE version, DLL build, and log when reporting a problem.
 
-[size=4][b][u]What this plugin does[/u][/b][/size]
-This plugin makes heavily-modded games save and load more quickly.
-It does so by hooking and patching the SKSE DLL, at runtime, with highly-optimised reimplementations of SKSE's cosave saving/loading API's functions.
+[size=4][b][u]Performance[/u][/b][/size]
+The original author reported very large reductions in SKSE cosave save and load time on a heavily modded setup. Results vary with cosave size, storage, CPU, configuration, and the behavior of installed SKSE plugins. This mod accelerates only the SKSE sidecar portion of a save, so the total save-screen improvement may be smaller than the cosave-only measurement.
 
-This is particularly effective for save games wherein heavy usage of RaceMenu has been made, such as through using the likes of OBody, Mu Skeleton Editor, or XP32 Maximum Skeleton's weapon styles for NPCs.
+[size=4][b][u]Configuration[/u][/b][/size]
+The INI is installed beside the DLL:
+[code]Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.ini[/code]
 
-On my machine†, my SKSE cosave, standing at 4.25 MB in size (at the time of writing), takes [b]8.7 seconds[/b] to save. [b]8.7 seconds[/b] for 4.25 MB. That's 0.49 megabytes a second.
+The plugin is enabled by default. Timing logs can be configured in the INI. Parallel saving remains off by default and should generally remain off.
 
-† My machine sports a Ryzen 7950X3D and a PCIe 4.0 NVMe SSD capable of writing at 7 GB/s: that is to say, it should not require 8.7 seconds to save 4.25 MB.
+[size=4][b][u]Verification[/u][/b][/size]
+The release contains:
+[list]
+[*]the complete public 0BSD source repository on GitHub;
+[*]a generated SHA-256 DLL manifest;
+[*]an archive SHA-256 sidecar;
+[*]a dependency-free Python verifier for manifests, static imports, and PE-section comparisons.
+[/list]
 
-When I activate this plugin, that same SKSE cosave takes only 0.06 seconds to save. That's sixty milliseconds: 70.82 megabytes a second. 145 times faster.
+The 1.5.1 DLLs can be compared against the corresponding 1.5.0 DLLs. The executable [code].text[/code] section should be identical; differences should be confined to release metadata, the sanitized embedded PDB path, version resources, and the PE checksum.
 
-Going a step further, and activating the experimental parallel-saving feature, with sixteen threads, the very same SKSE cosave takes only 0.04 seconds to save: forty milliseconds, 106.25 megabytes a second, 217 times faster.
+[size=4][b][u]Credits and license[/u][/b][/size]
+[b]Original author:[/b] Harry Gillanders (just-harry)
+[b]Maintenance-fork modifications:[/b] ShugokiFable
+[b]License:[/b] BSD Zero Clause License (0BSD)
 
-For loading a cosave, the improvement is a bit less impressive.
-Without this plugin, my SKSE cosave takes 1.5 seconds to load. With the plugin, it takes 0.1 seconds. So only a modest 15 times faster.
+0BSD permits use, copying, modification, and redistribution with or without fee. Derivative projects should preserve clear provenance and should not represent the original work as their own invention.
 
-[size=4][b][u]What this plugin does (TL;DR)[/u][/b][/size]
-This plugin makes SKSE cosaves save up-to 150 times faster, and load up-to 15 times faster.
-
-[size=4][b][u]Is this safe to use?[/u][/b][/size]
-If you are hesitant to use this plugin, then you are of good sense, for anything that toys about with the saving/loading logic has the potential to create corrupt save games and to corrupt the game-state upon loading.
-
-That said, I have taken great care to ensure that this plugin's saving and loading routines have the exact same effect as SKSE's original routines.
-
-In my testing, the saves generated with this plugin active are bit-for-bit identical to saves generated by SKSE's original code.
-With the one exception being that, when parallel-saving is used, the data for each plugin will be saved to the file in a slightly different and unpredictable order: this should be harmless as SKSE does not have a well-defined order for loaded plugins anyway.
-
-Likewise, for loading, in my testing with this plugin active an identical sequence of API calls are made as are made with SKSE's original code.
-
-[size=4][b][u]Technical discussion[/u][/b][/size]
-[spoiler]
-The obvious question by now is: "what is SKSE doing that's so slow?".
-What SKSE is doing is providing an API that suggests that SKSE itself is taking care of file-buffering—and then not doing [i]any[/i] file-buffering whatsoever, instead it issues an absurd number of system calls.
-
-This is the API SKSE provides for cosave saving:
-[code]bool WriteRecord (uint32_t type, uint32_t version, const void *buffer, uint32_t length);
-bool OpenRecord (uint32_t type, uint32_t version);
-bool WriteRecordData (const void *buffer, uint32_t length);
-[/code]
-[i]OpenRecord[/i] is used to begin a self-contained chunk of data.
-[i]WriteRecordData[/i] is used to append data to the last record began by [i]OpenRecord[/i].
-[i]WriteRecord[/i] is merely a convenience wrapper for calling [i]OpenRecord[/i] and then [i]WriteRecordData[/i].
-
-Every call to [i]WriteRecordData[/i] transitively calls the Win32 function [i]WriteFile[/i], making for one syscall.
-
-Every call of [i]OpenRecord[/i] transitively calls [i]SetFilePointerEx[/i] twice or thrice, making for two-or-three syscalls, it then also transitively calls [i]WriteFile[/i] in the same way as [i]WriteRecordData[/i] does.
-
-So what this plugin does to remedy this pretty state of things is it reimplements these three functions to not perform any syscalls nor any disk IO, and to instead just simply blit the received data into a pre-preserved region of memory, which is then written to a file all at once after all plugins have saved their data.
-(Some trickery with virtual-memory and an vectored-exception-handler is used to commit the region of memory gradually, without incurring the overhead of any bounds-checks.)
-
-For loading, the situation is better: typically each call to [i]GetNextRecordInfo[/i] and [i]ReadRecordData[/i] results in only one transitive call of [i]ReadFile[/i].
-The optimisation this plugin makes is similarly obvious: the file is read into memory all at once, and the API functions simply blit the data into the buffer supplied by the caller.
-[/spoiler]
-
-[size=4][b][u]Source-Code[/u][/b][/size]
-The source-code for this plugin is available at [url=https://github.com/just-harry/save-load-accelerator-for-skse-cosaves]https://github.com/just-harry/save-load-accelerator-for-skse-cosaves[/url].
-
-[size=4][b][u]Honourable Mentions[/u][/b][/size]
-On 2024-10-04 (over a year ago), GitHub user "intorr" submitted a [url=https://github.com/ianpatt/skse64/pull/44]pull-request to the SKSE project[/url] which speeds up the saving and loading of SKSE cosaves, via a delightfully simple implementation of a buffered file-stream.
-In intorr's testing, it reduced the cosave-saving time from 2 seconds to 0.05 seconds.
-
-The pull-request remains unmerged.
-Hence the existence of this plugin.
-(To clarify, my plugin is not based on intorr's PR in any way.)
-
-[size=4][b][u]Preemptively Answered Questions (PAQ)[/u][/b][/size]
-Q: Why isn't the letter S in the plugin's acronym? Where the did the K come from?
-A: Shut up.
-
-Q: Why did you answer the previous question so rudely?
-A: Look, you try coming up with a catchy name that forms a funny acronym.
-
-Q: Why the dots in the acronym?
-A: Without them I'd be infringing upon the wordmark of a chatroom-providing company.
-
+[size=4][b][u]Source[/u][/b][/size]
+Original upstream: [url=https://github.com/just-harry/save-load-accelerator-for-skse-cosaves]https://github.com/just-harry/save-load-accelerator-for-skse-cosaves[/url]
+Maintenance fork: [url=https://github.com/ShugokiFable/Faster-Loadin-n-Savin]https://github.com/ShugokiFable/Faster-Loadin-n-Savin[/url]

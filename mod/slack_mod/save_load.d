@@ -573,7 +573,7 @@ auto pluginStringsFromSerialisationStateIndex () (size_t sparseIndex) nothrow @n
 
 
 pragma(inline, true)
-HANDLE createCosaveFile (scope wchar[] stringBuffer) @trusted nothrow @nogc
+HANDLE createCosaveFile (scope wchar[] stringBuffer, scope char[] cosaveTempPathBuffer, out char[] cosaveTempPath) @trusted nothrow @nogc
 {
 	const(char)* cosavePath = global.addressOf.skseCosaveSavePath.base;
 
@@ -585,8 +585,26 @@ HANDLE createCosaveFile (scope wchar[] stringBuffer) @trusted nothrow @nogc
 		return INVALID_HANDLE_VALUE;
 	}
 
+	/+ The cosave is written to a sibling temporary file first; the previous
+	   cosave is only replaced once the new cosave has been written in full.
+	   A failed or interrupted save can therefore no longer destroy the
+	   previous, still-valid cosave. +/
+	enum string tempSuffix = ".tmp";
+
+	size_t cosavePathLength = strlen(cosavePath);
+
+	if (cosavePathLength + tempSuffix.length + 1 > cosaveTempPathBuffer.length)
+	{
+		reportErrorToUser("The cosave file path is too long!\r\nTHE GAME IS NOT FULLY SAVED.");
+		return INVALID_HANDLE_VALUE;
+	}
+
+	blit(cosaveTempPathBuffer.ptr, cosavePath, cosavePathLength);
+	blit(cosaveTempPathBuffer.ptr + cosavePathLength, tempSuffix.ptr, tempSuffix.length + 1);
+	cosaveTempPath = cosaveTempPathBuffer[0 .. cosavePathLength + tempSuffix.length];
+
 	HANDLE cosaveFile = CreateFileA(
-		cosavePath,
+		cosaveTempPath.ptr,
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ,
 		null,
@@ -605,6 +623,28 @@ HANDLE createCosaveFile (scope wchar[] stringBuffer) @trusted nothrow @nogc
 	}
 
 	return cosaveFile;
+}
+
+
+/+ The temporary file has been written in full and closed; atomically replace
+   the real cosave with it. The previous cosave is only destroyed by this
+   point of no return, and the replacement is pushed through the cache. +/
+pragma(inline, true)
+bool commitCosaveFile (scope const(char)* cosaveTempPath, scope wchar[] stringBuffer) @trusted nothrow @nogc
+{
+	const(char)* cosavePath = global.addressOf.skseCosaveSavePath.base;
+
+	if (MoveFileExA(cosaveTempPath, cosavePath, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) == 0)
+	{
+		reportErrorToUser(
+			stringBuffer,
+			"The completed cosave could not replace the previous cosave file!\r\nThe previous cosave is intact.\r\nTHE GAME IS NOT FULLY SAVED.",
+			hresultFromLastError(getLastError)
+		);
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -835,6 +875,19 @@ bool writeCosaveToFile (
 	uint actualSize = cast(uint) (endOfData - base);
 	uint writeSize = actualSize.alignUpTo(allocationGranularity);
 
+	/+ The sector-aligned write may extend past the end of the data, so make
+	   sure the whole padded write can land in the committed part of the buffer. +/
+	if (global.saveLoad.cosaveFileBuffer.commit < base + writeSize)
+	{
+		NTSTATUS growthError = global.saveLoad.cosaveFileBuffer.expandCommitTo(writeSize.roundUpToPowerOfTwo);
+
+		if (growthError)
+		{
+			reportErrorToUser(stringBuffer, "The cosave file buffer failed to grow.\r\nTHE GAME IS NOT FULLY SAVED.", growthError);
+			return false;
+		}
+	}
+
 	IO_STATUS_BLOCK ioStatusBlock = void;
 	ulong startOfFile = 0;
 
@@ -914,14 +967,20 @@ void saveCosaveSerial () nothrow @nogc
 
 	wchar[MAX_PATH] stringBuffer = void;
 
-	HANDLE cosaveFile = createCosaveFile(stringBuffer);
+	char[MAX_PATH + 8] cosaveTempPathBuffer = void;
+	char[] cosaveTempPath = void;
+
+	HANDLE cosaveFile = createCosaveFile(stringBuffer, cosaveTempPathBuffer, cosaveTempPath);
 
 	if (cosaveFile == INVALID_HANDLE_VALUE)
 	{
 		return;
 	}
 
-	scope(exit) NtClose(cosaveFile);
+	scope(exit) if (cosaveFile != INVALID_HANDLE_VALUE) NtClose(cosaveFile);
+
+	bool cosaveCommitted = false;
+	scope(exit) if (!cosaveCommitted) DeleteFileA(cosaveTempPath.ptr);
 
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[1]);
 
@@ -962,6 +1021,17 @@ void saveCosaveSerial () nothrow @nogc
 		return;
 	}
 
+	/+ The temporary cosave is fully written; atomically replace the real cosave. +/
+	NtClose(cosaveFile);
+	cosaveFile = INVALID_HANDLE_VALUE;
+
+	cosaveCommitted = commitCosaveFile(cosaveTempPath.ptr, stringBuffer);
+
+	if (!cosaveCommitted)
+	{
+		return;
+	}
+
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[3]);
 
 	if (global.configuration.flags & ConfigurationLongLived.Flags.logSaveTimingsToConsole)
@@ -992,14 +1062,20 @@ void saveCosaveParallel () nothrow @nogc
 
 	wchar[MAX_PATH] stringBuffer = void;
 
-	HANDLE cosaveFile = createCosaveFile(stringBuffer);
+	char[MAX_PATH + 8] cosaveTempPathBuffer = void;
+	char[] cosaveTempPath = void;
+
+	HANDLE cosaveFile = createCosaveFile(stringBuffer, cosaveTempPathBuffer, cosaveTempPath);
 
 	if (cosaveFile == INVALID_HANDLE_VALUE)
 	{
 		return;
 	}
 
-	scope(exit) NtClose(cosaveFile);
+	scope(exit) if (cosaveFile != INVALID_HANDLE_VALUE) NtClose(cosaveFile);
+
+	bool cosaveCommitted = false;
+	scope(exit) if (!cosaveCommitted) DeleteFileA(cosaveTempPath.ptr);
 
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[1]);
 
@@ -1197,6 +1273,17 @@ waitingForSaveToFinish:
 	endOfData = global.saveLoad.parallel.cosaveFileHead.atomicLoad!(MemoryOrder.acq);
 
 	if (!writeCosaveToFile(cosaveFile, base, endOfData, stringBuffer))
+	{
+		return;
+	}
+
+	/+ The temporary cosave is fully written; atomically replace the real cosave. +/
+	NtClose(cosaveFile);
+	cosaveFile = INVALID_HANDLE_VALUE;
+
+	cosaveCommitted = commitCosaveFile(cosaveTempPath.ptr, stringBuffer);
+
+	if (!cosaveCommitted)
 	{
 		return;
 	}
@@ -1477,13 +1564,17 @@ HANDLE openCosaveFile (scope wchar[] stringBuffer) @trusted nothrow @nogc
 		return INVALID_HANDLE_VALUE;
 	}
 
+	/+ Buffered, sequential reading: the cosave is read exactly once, from
+	   start to finish, so the normal Windows page cache and read-ahead are
+	   the fastest correct path. Write-through and unbuffered I/O are
+	   meaningless and constraining for a read-only handle. +/
 	HANDLE cosaveFile = CreateFileA(
 		cosavePath,
 		GENERIC_READ,
 		FILE_SHARE_READ,
 		null,
 		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
+		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
 		null
 	);
 
@@ -1542,13 +1633,15 @@ bool readCosaveFromFile (
 
 	ubyte* requiredCommit = global.saveLoad.cosaveFileBuffer.base + fileSize;
 
+	/+ The buffer's growth policy rounds up generously; the read itself below
+	   requests the exact file size, since the handle is buffered. +/
 	size_t commitSize = fileSize.roundUpToPowerOfTwo.alignUpTo(allocationGranularity);
 
 	if (global.saveLoad.cosaveFileBuffer.commit < requiredCommit)
 	{
 		assert(global.saveLoad.cosaveFileBuffer.commit < global.saveLoad.cosaveFileBuffer.tail);
 
-		if ((error = global.saveLoad.cosaveFileBuffer.expandCommitTo(fileSize.roundUpToPowerOfTwo)) != 0)
+		if ((error = global.saveLoad.cosaveFileBuffer.expandCommitTo(commitSize)) != 0)
 		{
 			reportErrorToUser(stringBuffer, "The cosave file buffer failed to grow.\r\nTHE GAME IS NOT FULLY LOADED.", error);
 			return false;
@@ -1565,7 +1658,7 @@ bool readCosaveFromFile (
 		null,
 		&ioStatusBlock1,
 		global.saveLoad.cosaveFileBuffer.base,
-		cast(uint) commitSize,
+		cast(uint) fileSize,
 		cast(const(LARGE_INTEGER)*) &startOfFile,
 		null
 	);
@@ -1922,14 +2015,20 @@ version (SLACKVerificationMode)
 
 		wchar[MAX_PATH] stringBuffer = void;
 
-		HANDLE verificationLog = createCosaveFile(stringBuffer);
+		char[MAX_PATH + 8] cosaveTempPathBuffer = void;
+		char[] cosaveTempPath = void;
+
+		HANDLE verificationLog = createCosaveFile(stringBuffer, cosaveTempPathBuffer, cosaveTempPath);
 
 		if (verificationLog == INVALID_HANDLE_VALUE)
 		{
 			return;
 		}
 
-		scope(exit) NtClose(verificationLog);
+		scope(exit) if (verificationLog != INVALID_HANDLE_VALUE) NtClose(verificationLog);
+
+		bool cosaveCommitted = false;
+		scope(exit) if (!cosaveCommitted) DeleteFileA(cosaveTempPath.ptr);
 
 		uint actualSize = cast(uint) (global.saveLoad.verificationHead - global.saveLoad.verificationBase);
 		uint writeSize = actualSize.alignUpTo(allocationGranularity);
@@ -1958,6 +2057,11 @@ version (SLACKVerificationMode)
 			endOfFile.sizeof,
 			FILE_INFORMATION_CLASS.FileEndOfFileInformation
 		);
+
+		NtClose(verificationLog);
+		verificationLog = INVALID_HANDLE_VALUE;
+
+		cosaveCommitted = commitCosaveFile(cosaveTempPath.ptr, stringBuffer);
 	}
 }
 

@@ -1,0 +1,23 @@
+Faster Loadin and Savin 1.5.1 - installation notes
+
+RECOMMENDED INSTALL
+1. Install with Mod Organizer 2, Vortex, or another FOMOD-capable manager.
+2. Select the detected Skyrim runtime.
+3. Keep "Universal (Recommended)" unless you deliberately want the optional High-End build.
+
+CPU BUILDS
+- Universal x86-64-v2: safe default and recommended for nearly everyone.
+- High-End x86-64-v3: optional AVX2-class build for AMD Zen 2 or newer and Intel Haswell or newer. Gains may be negligible.
+
+MANUAL INSTALL
+Copy the DLL and INI for exactly one game version to:
+Data\DLLPlugins\
+
+The universal files are in the archive's root game-version folders. High-End files are under:
+Optional\High-End (x86-64-v3)\<game-version>\DLLPlugins\
+
+UPDATING OR REMOVING
+No save cleaning or new game is required. The plugin does not change the SKSE cosave format. Remove the old mod version before installing a different CPU build so two copies cannot be deployed.
+
+SAFETY NOTE
+Atomic replacement reduces the risk of a truncated or destroyed SKSE cosave if saving is interrupted. It is not an atomic transaction with Skyrim's main .ess file. Experimental parallel saving remains disabled by default and should stay disabled unless all serialization callbacks are known to be thread-safe.

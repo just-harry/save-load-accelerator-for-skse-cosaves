@@ -1,168 +1,295 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
-	<moduleName>SaveLoadAcceleratorForSKSECosaves</moduleName>
+    <moduleName>Faster Loadin and Savin</moduleName>
 
-	<installSteps order="Explicit">
-		<installStep name="By Game Version">
-			<optionalFileGroups order="Explicit">
-				<group name="Please select your version of the game:" type="SelectExactlyOne">
-					<plugins order="Explicit">
-						<plugin name="Skyrim AE v1.6.1170; SKSE64 v2.2.6">
-							<description>For version 1.6.1170 of Skyrim Anniversary Edition, for which version 2.2.6 of SKSE64 is to be used.</description>
-							<files>
-								<folder source="ae" destination="" />
-							</files>
-							<typeDescriptor>
-								<dependencyType>
-									<defaultType name="Optional" />
-									<patterns>
-										<pattern>
-											<dependencies>
-												<gameDependency version="1.6.1170" />
-											</dependencies>
-											<type name="Recommended" />
-										</pattern>
-									</patterns>
-								</dependencyType>
-							</typeDescriptor>
-						</plugin>
-						<plugin name="Skyrim AE v1.6.1130; SKSE64 v2.2.5">
-							<description>For version 1.6.1130 of Skyrim Anniversary Edition, for which version 2.2.5 of SKSE64 is to be used.</description>
-							<files>
-								<folder source="ae1130" destination="" />
-							</files>
-							<typeDescriptor>
-								<dependencyType>
-									<defaultType name="Optional" />
-									<patterns>
-										<pattern>
-											<dependencies>
-												<gameDependency version="1.6.1130" />
-											</dependencies>
-											<type name="Recommended" />
-										</pattern>
-									</patterns>
-								</dependencyType>
-							</typeDescriptor>
-						</plugin>
-						<plugin name="Skyrim AE v1.6.640; SKSE64 v2.2.3">
-							<description>For version 1.6.640 of Skyrim Anniversary Edition, for which version 2.2.3 of SKSE64 is to be used.</description>
-							<files>
-								<folder source="ae640" destination="" />
-							</files>
-							<typeDescriptor>
-								<dependencyType>
-									<defaultType name="Optional" />
-									<patterns>
-										<pattern>
-											<dependencies>
-												<gameDependency version="1.6.640" />
-											</dependencies>
-											<type name="Recommended" />
-										</pattern>
-									</patterns>
-								</dependencyType>
-							</typeDescriptor>
-						</plugin>
-						<plugin name="Skyrim AE v1.6.353; SKSE64 v2.1.5">
-							<description>For version 1.6.353 of Skyrim Anniversary Edition, for which version 2.1.5 of SKSE64 is to be used.</description>
-							<files>
-								<folder source="ae353" destination="" />
-							</files>
-							<typeDescriptor>
-								<dependencyType>
-									<defaultType name="Optional" />
-									<patterns>
-										<pattern>
-											<dependencies>
-												<gameDependency version="1.6.353" />
-											</dependencies>
-											<type name="Recommended" />
-										</pattern>
-									</patterns>
-								</dependencyType>
-							</typeDescriptor>
-						</plugin>
-						<plugin name="Skyrim SE v1.5.97; SKSE64 v2.0.20">
-							<description>For version 1.5.97 of Skyrim Special Edition, for which version 2.0.20 of SKSE64 is to be used.</description>
-							<files>
-								<folder source="se" destination="" />
-							</files>
-							<typeDescriptor>
-								<dependencyType>
-									<defaultType name="Optional" />
-									<patterns>
-										<pattern>
-											<dependencies>
-												<gameDependency version="1.5.97" />
-											</dependencies>
-											<type name="Recommended" />
-										</pattern>
-									</patterns>
-								</dependencyType>
-							</typeDescriptor>
-						</plugin>
-						<plugin name="Skyrim VR v1.4.15; SKSEVR v2.0.12">
-							<description>For version 1.4.15 of Skyrim VR, for which version 2.0.12 of SKSEVR is to be used.</description>
-							<files>
-								<folder source="vr" destination="" />
-							</files>
-							<typeDescriptor>
-								<dependencyType>
-									<defaultType name="Optional" />
-									<patterns>
-										<pattern>
-											<dependencies>
-												<gameDependency version="1.4.15" />
-											</dependencies>
-											<type name="Recommended" />
-										</pattern>
-									</patterns>
-								</dependencyType>
-							</typeDescriptor>
-						</plugin>
-						<plugin name="Skyrim AE v1.6.1179 (GOG); SKSE64 v2.2.6 (GOG)">
-							<description>For version 1.6.1179 of Skyrim Anniversary Edition (GOG), for which version 2.2.6 (GOG) of SKSE64 is to be used.</description>
-							<files>
-								<folder source="gog" destination="" />
-							</files>
-							<typeDescriptor>
-								<dependencyType>
-									<defaultType name="Optional" />
-									<patterns>
-										<pattern>
-											<dependencies>
-												<gameDependency version="1.6.1179" />
-											</dependencies>
-											<type name="Recommended" />
-										</pattern>
-									</patterns>
-								</dependencyType>
-							</typeDescriptor>
-						</plugin>
-						<plugin name="Skyrim AE v1.6.659 (GOG); SKSE64 v2.2.3 (GOG)">
-							<description>For version 1.6.659 of Skyrim Anniversary Edition (GOG), for which version 2.2.3 (GOG) of SKSE64 is to be used.</description>
-							<files>
-								<folder source="gog659" destination="" />
-							</files>
-							<typeDescriptor>
-								<dependencyType>
-									<defaultType name="Optional" />
-									<patterns>
-										<pattern>
-											<dependencies>
-												<gameDependency version="1.6.659" />
-											</dependencies>
-											<type name="Recommended" />
-										</pattern>
-									</patterns>
-								</dependencyType>
-							</typeDescriptor>
-						</plugin>
-					</plugins>
-				</group>
-			</optionalFileGroups>
-		</installStep>
-	</installSteps>
+    <installSteps order="Explicit">
+        <installStep name="Game Version">
+            <optionalFileGroups order="Explicit">
+                <group name="Select your Skyrim runtime" type="SelectExactlyOne">
+                    <plugins order="Explicit">
+                        <plugin name="Skyrim AE v1.6.1170; SKSE64 v2.2.6">
+                            <description>For Skyrim Anniversary Edition 1.6.1170 with SKSE64 2.2.6.</description>
+                            <files>
+                                <folder source="ae" destination="" priority="0" />
+                            </files>
+                            <conditionFlags>
+                                <flag name="GameVersion">ae</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <dependencyType>
+                                    <defaultType name="Optional" />
+                                    <patterns>
+                                        <pattern>
+                                            <dependencies>
+                                                <gameDependency version="1.6.1170" />
+                                            </dependencies>
+                                            <type name="Recommended" />
+                                        </pattern>
+                                    </patterns>
+                                </dependencyType>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Skyrim AE v1.6.1130; SKSE64 v2.2.5">
+                            <description>For Skyrim Anniversary Edition 1.6.1130 with SKSE64 2.2.5.</description>
+                            <files>
+                                <folder source="ae1130" destination="" priority="0" />
+                            </files>
+                            <conditionFlags>
+                                <flag name="GameVersion">ae1130</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <dependencyType>
+                                    <defaultType name="Optional" />
+                                    <patterns>
+                                        <pattern>
+                                            <dependencies>
+                                                <gameDependency version="1.6.1130" />
+                                            </dependencies>
+                                            <type name="Recommended" />
+                                        </pattern>
+                                    </patterns>
+                                </dependencyType>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Skyrim AE v1.6.640; SKSE64 v2.2.3">
+                            <description>For Skyrim Anniversary Edition 1.6.640 with SKSE64 2.2.3.</description>
+                            <files>
+                                <folder source="ae640" destination="" priority="0" />
+                            </files>
+                            <conditionFlags>
+                                <flag name="GameVersion">ae640</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <dependencyType>
+                                    <defaultType name="Optional" />
+                                    <patterns>
+                                        <pattern>
+                                            <dependencies>
+                                                <gameDependency version="1.6.640" />
+                                            </dependencies>
+                                            <type name="Recommended" />
+                                        </pattern>
+                                    </patterns>
+                                </dependencyType>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Skyrim AE v1.6.353; SKSE64 v2.1.5">
+                            <description>For Skyrim Anniversary Edition 1.6.353 with SKSE64 2.1.5.</description>
+                            <files>
+                                <folder source="ae353" destination="" priority="0" />
+                            </files>
+                            <conditionFlags>
+                                <flag name="GameVersion">ae353</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <dependencyType>
+                                    <defaultType name="Optional" />
+                                    <patterns>
+                                        <pattern>
+                                            <dependencies>
+                                                <gameDependency version="1.6.353" />
+                                            </dependencies>
+                                            <type name="Recommended" />
+                                        </pattern>
+                                    </patterns>
+                                </dependencyType>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Skyrim SE v1.5.97; SKSE64 v2.0.20">
+                            <description>For Skyrim Special Edition 1.5.97 with SKSE64 2.0.20.</description>
+                            <files>
+                                <folder source="se" destination="" priority="0" />
+                            </files>
+                            <conditionFlags>
+                                <flag name="GameVersion">se</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <dependencyType>
+                                    <defaultType name="Optional" />
+                                    <patterns>
+                                        <pattern>
+                                            <dependencies>
+                                                <gameDependency version="1.5.97" />
+                                            </dependencies>
+                                            <type name="Recommended" />
+                                        </pattern>
+                                    </patterns>
+                                </dependencyType>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Skyrim VR v1.4.15; SKSEVR v2.0.12">
+                            <description>For Skyrim VR 1.4.15 with SKSEVR 2.0.12.</description>
+                            <files>
+                                <folder source="vr" destination="" priority="0" />
+                            </files>
+                            <conditionFlags>
+                                <flag name="GameVersion">vr</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <dependencyType>
+                                    <defaultType name="Optional" />
+                                    <patterns>
+                                        <pattern>
+                                            <dependencies>
+                                                <gameDependency version="1.4.15" />
+                                            </dependencies>
+                                            <type name="Recommended" />
+                                        </pattern>
+                                    </patterns>
+                                </dependencyType>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Skyrim AE v1.6.1179 (GOG); SKSE64 v2.2.6 (GOG)">
+                            <description>For the GOG release of Skyrim Anniversary Edition 1.6.1179 with SKSE64 2.2.6.</description>
+                            <files>
+                                <folder source="gog" destination="" priority="0" />
+                            </files>
+                            <conditionFlags>
+                                <flag name="GameVersion">gog</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <dependencyType>
+                                    <defaultType name="Optional" />
+                                    <patterns>
+                                        <pattern>
+                                            <dependencies>
+                                                <gameDependency version="1.6.1179" />
+                                            </dependencies>
+                                            <type name="Recommended" />
+                                        </pattern>
+                                    </patterns>
+                                </dependencyType>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Skyrim AE v1.6.659 (GOG); SKSE64 v2.2.3 (GOG)">
+                            <description>For the GOG release of Skyrim Anniversary Edition 1.6.659 with SKSE64 2.2.3.</description>
+                            <files>
+                                <folder source="gog659" destination="" priority="0" />
+                            </files>
+                            <conditionFlags>
+                                <flag name="GameVersion">gog659</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <dependencyType>
+                                    <defaultType name="Optional" />
+                                    <patterns>
+                                        <pattern>
+                                            <dependencies>
+                                                <gameDependency version="1.6.659" />
+                                            </dependencies>
+                                            <type name="Recommended" />
+                                        </pattern>
+                                    </patterns>
+                                </dependencyType>
+                            </typeDescriptor>
+                        </plugin>
+                    </plugins>
+                </group>
+            </optionalFileGroups>
+        </installStep>
+
+        <installStep name="CPU Build">
+            <optionalFileGroups order="Explicit">
+                <group name="Select one CPU profile" type="SelectExactlyOne">
+                    <plugins order="Explicit">
+                        <plugin name="Universal (Recommended)">
+                            <description>Compatible x86-64-v2 build. This is the safe default and is recommended for nearly everyone.</description>
+                            <conditionFlags>
+                                <flag name="CPUProfile">Universal</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <type name="Recommended" />
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="High-End (x86-64-v3 / AVX2-class)">
+                            <description>Optional build for AMD Zen 2 or newer and Intel Haswell or newer CPUs. Performance gains are workload-dependent and may be negligible. Do not select this for older CPUs.</description>
+                            <conditionFlags>
+                                <flag name="CPUProfile">HighEnd</flag>
+                            </conditionFlags>
+                            <typeDescriptor>
+                                <type name="Optional" />
+                            </typeDescriptor>
+                        </plugin>
+                    </plugins>
+                </group>
+            </optionalFileGroups>
+        </installStep>
+    </installSteps>
+
+    <conditionalFileInstalls>
+        <patterns>
+            <pattern>
+                <dependencies operator="And">
+                    <flagDependency flag="GameVersion" value="ae" />
+                    <flagDependency flag="CPUProfile" value="HighEnd" />
+                </dependencies>
+                <files>
+                    <folder source="Optional/High-End (x86-64-v3)/ae" destination="" priority="100" />
+                </files>
+            </pattern>
+            <pattern>
+                <dependencies operator="And">
+                    <flagDependency flag="GameVersion" value="ae1130" />
+                    <flagDependency flag="CPUProfile" value="HighEnd" />
+                </dependencies>
+                <files>
+                    <folder source="Optional/High-End (x86-64-v3)/ae1130" destination="" priority="100" />
+                </files>
+            </pattern>
+            <pattern>
+                <dependencies operator="And">
+                    <flagDependency flag="GameVersion" value="ae640" />
+                    <flagDependency flag="CPUProfile" value="HighEnd" />
+                </dependencies>
+                <files>
+                    <folder source="Optional/High-End (x86-64-v3)/ae640" destination="" priority="100" />
+                </files>
+            </pattern>
+            <pattern>
+                <dependencies operator="And">
+                    <flagDependency flag="GameVersion" value="ae353" />
+                    <flagDependency flag="CPUProfile" value="HighEnd" />
+                </dependencies>
+                <files>
+                    <folder source="Optional/High-End (x86-64-v3)/ae353" destination="" priority="100" />
+                </files>
+            </pattern>
+            <pattern>
+                <dependencies operator="And">
+                    <flagDependency flag="GameVersion" value="se" />
+                    <flagDependency flag="CPUProfile" value="HighEnd" />
+                </dependencies>
+                <files>
+                    <folder source="Optional/High-End (x86-64-v3)/se" destination="" priority="100" />
+                </files>
+            </pattern>
+            <pattern>
+                <dependencies operator="And">
+                    <flagDependency flag="GameVersion" value="vr" />
+                    <flagDependency flag="CPUProfile" value="HighEnd" />
+                </dependencies>
+                <files>
+                    <folder source="Optional/High-End (x86-64-v3)/vr" destination="" priority="100" />
+                </files>
+            </pattern>
+            <pattern>
+                <dependencies operator="And">
+                    <flagDependency flag="GameVersion" value="gog" />
+                    <flagDependency flag="CPUProfile" value="HighEnd" />
+                </dependencies>
+                <files>
+                    <folder source="Optional/High-End (x86-64-v3)/gog" destination="" priority="100" />
+                </files>
+            </pattern>
+            <pattern>
+                <dependencies operator="And">
+                    <flagDependency flag="GameVersion" value="gog659" />
+                    <flagDependency flag="CPUProfile" value="HighEnd" />
+                </dependencies>
+                <files>
+                    <folder source="Optional/High-End (x86-64-v3)/gog659" destination="" priority="100" />
+                </files>
+            </pattern>
+        </patterns>
+    </conditionalFileInstalls>
 </config>
-

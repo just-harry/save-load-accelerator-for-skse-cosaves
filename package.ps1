@@ -1,75 +1,14 @@
-
 <# SPDX-LICENSE-IDENTIFIER: 0BSD #>
 
 [CmdletBinding()]
-Param
-(
-	[Parameter()]
-		[ValidateNotNull()]
-			$Configuration = 'Release'
+Param (
+    [Parameter()]
+    [Version] $Version = [Version]'1.5.1',
+
+    [Parameter()]
+    [Switch] $SkipBuild
 )
 
-. "$PSScriptRoot/scripts/common.ps1"
-
-$Source = "$PSScriptRoot/mod"
-$BuildPath = "$PSScriptRoot/build/$Configuration"
-$PackagePath = "$PSScriptRoot/package/$Configuration"
-
-New-Item -ItemType Directory -Force -Path $PackagePath > $Null
-
-Push-Location -LiteralPath $PackagePath
-
-try
-{
-	$INIFilePath = "$Source/Save&LoadAcceleratorForSKSECosaves.ini"
-
-	$Variants = @('ae', 'ae1130', 'ae640', 'ae353', 'se', 'vr', 'gog', 'gog659')
-
-	ForEach-InParallel $Variants `
-	{
-		if (-not $IsSerial)
-		{
-			$Configuration = $Using:Configuration
-			$BuildPath = $Using:BuildPath
-			$INIFilePath = $Using:INIFilePath
-		}
-
-		$Variant = $_
-
-		$BuildVariant = "$BuildPath/$Variant"
-		$ModPath = $Variant
-		$DLLPluginsPath = "$ModPath/DLLPlugins"
-
-		New-Item -ItemType Directory -Force -Path $DLLPluginsPath > $Null
-
-		Push-Location -LiteralPath $ModPath
-
-		try
-		{
-			Copy-Item -Force -LiteralPath "$BuildVariant/Save&LoadAcceleratorForSKSECosaves.dll" -Destination DLLPlugins
-			Copy-Item -Force -LiteralPath "$BuildVariant/Save&LoadAcceleratorForSKSECosaves.pdb" -Destination DLLPlugins
-			Copy-Item -Force -LiteralPath $INIFilePath -Destination DLLPlugins
-
-			$ZipFilePath = "../Save & Load Accelerator For SKSE Cosaves ($($Variant.ToUpperInvariant() -replace '([a-z])([0-9])', '$1 $2'))$(if ($Configuration -ne 'Release') {" ($Configuration)"}).zip"
-
-			Remove-Item -Force -LiteralPath $ZipFilePath -ErrorAction Ignore
-			7za u -sse -mx9 $ZipFilePath * > $Null
-
-			Get-Item -LiteralPath $ZipFilePath
-		}
-		finally
-		{
-			Pop-Location
-		}
-	}
-
-	$FOMODPath = 'Save & Load Accelerator For SKSE Cosaves.zip'
-
-	Remove-Item -Force -LiteralPath $FOMODPath -ErrorAction Ignore
-	7za u -sse -mx9 $FOMODPath "$Source/fomod" $Variants.ForEach{"$PackagePath/$_"} > $Null
-}
-finally
-{
-	Pop-Location
-}
-
+Write-Warning 'package.ps1 is now a compatibility wrapper. Using package-release.ps1 so public packages cannot contain PDBs or stale layouts.'
+& "$PSScriptRoot/package-release.ps1" -Version $Version -SkipBuild:$SkipBuild
+exit $LASTEXITCODE

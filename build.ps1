@@ -19,6 +19,10 @@ Param
 			$TargetCPU = 'x86-64-v2',
 
 	[Parameter()]
+			# Appended to the build directory, so that multiple CPU-profile builds can coexist.
+			$BuildTag = '',
+
+	[Parameter()]
 			[Switch] $Unittest,
 
 	[Parameter()]
@@ -28,10 +32,33 @@ Param
 . "$PSScriptRoot/scripts/common.ps1"
 
 $Source = "$PSScriptRoot/mod"
-$BuildPath = "$PSScriptRoot/build/$Configuration"
+$BuildPath = "$PSScriptRoot/build/$Configuration$BuildTag"
 $BuildRelativeSource = '../../mod'
 
 New-Item -ItemType Directory -Force -Path $BuildPath > $Null
+
+# --- Toolchain resolution ------------------------------------------------------
+# Upstream expects ldc2, clang++, lld-link, and rc on PATH. Be a little more
+# forgiving: lld-link may be substituted by MSVC link.exe, and clang++ by MSVC
+# cl.exe (the single C++ shim is plain MSVC-compatible COFF either way).
+$LDC = Get-Command ldc2 -ErrorAction SilentlyContinue
+if (-not $LDC) { throw "ldc2 was not found in PATH; install LDC from https://github.com/ldc-developers/ldc/releases" }
+
+$Linker = Get-Command lld-link -ErrorAction SilentlyContinue
+if (-not $Linker) { $Linker = Get-Command link -ErrorAction SilentlyContinue }
+if (-not $Linker) { throw "Neither lld-link nor MSVC link.exe was found; run from a Visual Studio developer environment" }
+
+$Clang = Get-Command clang++ -ErrorAction SilentlyContinue
+$MSVCpp = $null
+if (-not $Clang) { $MSVCpp = Get-Command cl -ErrorAction SilentlyContinue }
+if (-not $Clang -and -not $MSVCpp) { throw "Neither clang++ nor MSVC cl.exe was found; run from a Visual Studio developer environment" }
+
+$ResourceCompiler = Get-Command rc -ErrorAction SilentlyContinue
+if (-not $ResourceCompiler) { throw "rc.exe was not found; run from a Visual Studio developer environment (Windows SDK)" }
+
+Write-Host "Using ldc2: $($LDC.Source)"
+Write-Host "Using linker: $($Linker.Source)"
+Write-Host "Using C++ compiler: $(if ($Clang) { $Clang.Source } else { $MSVCpp.Source })"
 
 Push-Location -LiteralPath $BuildPath
 
@@ -184,6 +211,11 @@ try
 			$TargetCPU = $Using:TargetCPU
 			$TargetTriple = $Using:TargetTriple
 			$Unittest = $Using:Unittest
+			$LDC = $Using:LDC
+			$Linker = $Using:Linker
+			$Clang = $Using:Clang
+			$MSVCpp = $Using:MSVCpp
+			$ResourceCompiler = $Using:ResourceCompiler
 		}
 
 		$DLL = $_.DLL
@@ -192,7 +224,7 @@ try
 
 		New-Item -ItemType Directory -Force -Path $Base > $Null
 
-		ldc2 `
+		& $LDC.Source `
 			-of "$Base/$($DLL.Name)$CompilationSuffix" `
 			-mtriple $TargetTriple `
 			-mcpu $TargetCPU `
@@ -210,23 +242,39 @@ try
 			$SourceFiles `
 			$(if ($Unittest) {$ImportedLibraries; $DLL.ImportedLibraries})
 
+		if ($LASTEXITCODE -ne 0) { throw "ldc2 failed for variant $($Variant.Name) (exit $LASTEXITCODE)" }
+
 		if (-not $Unittest)
 		{
-			rc /nologo /8 /fo "$Base/$($DLL.Name).res" $DLL.ResourceFile
+			& $ResourceCompiler.Source /nologo /8 /fo "$Base/$($DLL.Name).res" $DLL.ResourceFile
+			if ($LASTEXITCODE -ne 0) { throw "rc failed for variant $($Variant.Name) (exit $LASTEXITCODE)" }
 
-			clang++ `
-				-c `
-				-o "$Base/exception_wrapper.obj" `
-				"--target=$TargetTriple" `
-				"-march=$TargetCPU" `
-				-flto=thin `
-				-g `
-				-gcodeview `
-				-emit-llvm `
-				$Optimisation `
-				"$SourceBase/slack_mod/exception_wrapper.cpp"
+			if ($Clang)
+			{
+				& $Clang.Source `
+					-c `
+					-o "$Base/exception_wrapper.obj" `
+					"--target=$TargetTriple" `
+					"-march=$TargetCPU" `
+					-flto=thin `
+					-g `
+					-gcodeview `
+					-emit-llvm `
+					$Optimisation `
+					"$SourceBase/slack_mod/exception_wrapper.cpp"
+			}
+			else
+			{
+				# MSVC cl.exe substitutes for clang++: the shim is a trivial
+				# try/catch wrapper, so CPU targeting and LTO are immaterial.
+				& $MSVCpp.Source /nologo /c /EHsc /O2 /DNDEBUG `
+					"/Fo$Base/exception_wrapper.obj" `
+					"$SourceBase/slack_mod/exception_wrapper.cpp"
+			}
 
-			lld-link `
+			if ($LASTEXITCODE -ne 0) { throw "C++ shim compilation failed for variant $($Variant.Name) (exit $LASTEXITCODE)" }
+
+			& $Linker.Source `
 				/out:"$Base/$($DLL.Name).dll" `
 				/dll `
 				/def:"$($DLL.ExportsDef)" `
@@ -235,12 +283,16 @@ try
 				/nodefaultlib `
 				/entry:dllEntrypoint `
 				/debug:full `
+				'/pdbaltpath:%_PDB%' `
+				/brepro `
 				/opt:ref `
 				"$Base/$($DLL.Name).res" `
 				"./$Base/exception_wrapper.obj" `
 				"./$Base/$($DLL.Name)$CompilationSuffix" `
 				$ImportedLibraries `
 				$DLL.ImportedLibraries
+
+			if ($LASTEXITCODE -ne 0) { throw "Linking failed for variant $($Variant.Name) (exit $LASTEXITCODE)" }
 		}
 	}
 }
