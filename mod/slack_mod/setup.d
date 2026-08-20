@@ -903,7 +903,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint
 	static if (targetedGameArchetype == GameArchetype.se)
 	{
 		__gshared wchar[203] message = "Version 2.0.1x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.0.20 of SKSE.\0";
-		enum wstring url = "https://skse.silverlock.org/#:~:text=game%20version%201%2E5%2E97";
+		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-233411:~:text=2%2E0%2E20";
 
 		if (versionOf(skse64v2_0_17_globalSKSE64Provider) == 0x02_00_011_0)
 		{
@@ -926,7 +926,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint
 	else static if (targetedGameArchetype == GameArchetype.vr)
 	{
 		__gshared wchar[203] message = "Version 2.0.xx of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.0.12 of SKSE.\0";
-		enum wstring url = "https://skse.silverlock.org/#:~:text=Current%20VR%20build";
+		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30457?tab=files#file-expander-header-499284:~:text=2%2E0%2E12,-Compatible";
 
 		if (versionOf(skseVRv2_0_11_globalSKSE64Provider) == 0x02_00_00B_0)
 		{
@@ -956,7 +956,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint
 	else static if (targetedGameArchetype == GameArchetype.ae1130)
 	{
 		__gshared wchar[201] message = "Version 2.2.4 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.5 of SKSE.\0";
-		enum wstring url = "https://skse.silverlock.org/#:~:text=archived%20builds";
+		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-233411:~:text=2%2E2%2E5";
 
 		/+ The offset of `globalSKSE64Provider.skse64Version` didn't change
 		   between versions 2.2.4 and 2.2.5, so we needn't use `versionOf` here. +/
@@ -970,7 +970,8 @@ bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint
 	else static if (targetedGameArchetype == GameArchetype.ae640)
 	{
 		__gshared wchar[201] message = "Version 2.2.x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.3 of SKSE.\0";
-		enum wstring url = "https://skse.silverlock.org/#:~:text=archived%20builds";
+		/+ Having the text-fragment match on the upload time is kind of gross, but it's the only way (download count excepted) to disambiguate between the Steam and GOG versions. +/
+		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-323365:~:text=8%3A09PM,2%2E2%2E3";
 
 		uint version_ = versionOf(skse64v2_2_01_or_02_globalSKSE64Provider);
 
@@ -986,7 +987,8 @@ bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint
 	else static if (targetedGameArchetype == GameArchetype.gog659)
 	{
 		__gshared wchar[207] message = "Version 2.2.2 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.3 (GOG) of SKSE.\0";
-		enum wstring url = "https://skse.silverlock.org/#:~:text=archived%20builds";
+		/+ Again with the text-fragment matching on the upload time grossness. +/
+		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-323366:~:text=8%3A10PM,2%2E2%2E3";
 
 		if (versionOf(skse64v2_2_02gog_globalSKSE64Provider) == 0x02_02_002_0)
 		{}
