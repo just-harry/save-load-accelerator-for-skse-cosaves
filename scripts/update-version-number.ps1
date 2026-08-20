@@ -22,4 +22,6 @@ sed -b -i $(if ($IsMacOS) {''}) -E -e "s/(MachineVersion=`")[^`"]+/\1$AsSemantic
 
 sed -b -i $(if ($IsMacOS) {''}) -E -e "s!(/\+release-version\+/0x)[0-9a-fA-F_]+!\1$AsPackedUIntDLiteral!" -- "$RootPath/mod/slack_mod/entrypoint.d"
 
+sed -b -i $(if ($IsMacOS) {''}) -E -e "s/(<#release-version#>\x27)[^\x27]+/\1v$AsSemantic/" -- "$RootPath/build.ps1"
+
 

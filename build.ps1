@@ -22,7 +22,10 @@ Param
 			[Switch] $Unittest,
 
 	[Parameter()]
-			$DVersions = @()
+			$DVersions = @(),
+
+	[Parameter()]
+			$ReleaseTag = <#release-version#>'v1.3.3'
 )
 
 . "$PSScriptRoot/scripts/common.ps1"
@@ -191,6 +194,7 @@ try
 			$DVersionFlags = $Using:DVersionFlags
 			$ImportedLibraries = $Using:ImportedLibraries
 			$Optimisation = $Using:Optimisation
+			$ReleaseTag = $Using:ReleaseTag
 			$SourceBase = $Using:SourceBase
 			$SourceFiles = $Using:SourceFiles
 			$TargetCPU = $Using:TargetCPU
@@ -204,12 +208,15 @@ try
 
 		New-Item -ItemType Directory -Force -Path $Base > $Null
 
+		$DebugPrefixMap = "$SourceBase=C:\S.L.A.C.K.-$ReleaseTag"
+
 		ldc2 `
 			-of "$Base/$($DLL.Name)$CompilationSuffix" `
 			-mtriple $TargetTriple `
 			-mcpu $TargetCPU `
 			-fvisibility hidden `
 			--gc `
+			"-fdebug-prefix-map=$DebugPrefixMap" `
 			$CompilationFlags `
 			-dip1000 `
 			$ConfigurationFlags `
@@ -232,6 +239,7 @@ try
 				"--target=$TargetTriple" `
 				"-march=$TargetCPU" `
 				-flto=thin `
+				"-fdebug-prefix-map=$DebugPrefixMap" `
 				-g `
 				-gcodeview `
 				-emit-llvm `
