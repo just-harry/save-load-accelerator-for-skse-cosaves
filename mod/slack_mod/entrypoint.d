@@ -4,6 +4,7 @@
 module slack_mod.entrypoint;
 
 import game.target;
+import ldc.attributes : assumeUsed, section;
 import skse64.dll_plugins;
 import skse64.hacks.versioning;
 import slack_common.bindings;
@@ -12,6 +13,14 @@ import slack_common.text;
 import slack_common.user_interface;
 import slack_mod.global;
 import slack_mod.setup;
+
+
+@assumeUsed
+@section("humanity")
+immutable(char[111]) niceSurprise = (
+	  "The entirety of this program's source-code was human-written, "
+	~ "with no assistance at all from LLMs of any kind.\0"
+);
 
 
 /+ Will no one rid me of this turbulent runtime?! +/
