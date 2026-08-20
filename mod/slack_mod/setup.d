@@ -958,6 +958,8 @@ bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint
 		__gshared wchar[201] message = "Version 2.2.4 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.5 of SKSE.\0";
 		enum wstring url = "https://skse.silverlock.org/#:~:text=archived%20builds";
 
+		/+ The offset of `globalSKSE64Provider.skse64Version` didn't change
+		   between versions 2.2.4 and 2.2.5, so we needn't use `versionOf` here. +/
 		if (skse64Version == 0x02_02_004_0)
 		{}
 		else
