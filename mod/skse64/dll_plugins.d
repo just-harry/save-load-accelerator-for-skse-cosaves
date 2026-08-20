@@ -35,6 +35,43 @@ struct DLLPluginMetadata
 }
 
 
+struct DLLPluginVersionMetadata
+{
+	enum SchemaVersion : uint
+	{
+		latest = v1,
+		v1 = 1
+	}
+
+
+	enum GameVersionSupportFlags : uint
+	{
+		none = 0,
+		usesAECompatibleAddressLibrary = 1 << 0,
+		hasNoHardcodedAddresses = 1 << 1,
+		usesOffsetsFrom1_6_629 = 1 << 2,
+	}
+
+
+	enum GameVersionSupportExtendedFlags : uint
+	{
+		none = 0,
+		doesNotDependOnFixedOffsets = 1 << 0,
+	}
+
+
+	uint schemaVersion;
+	uint pluginVersion;
+	char[256] name = 0;
+	char[256] authorName = 0;
+	char[252] emailAddress = 0;
+	GameVersionSupportExtendedFlags gameVersionSupportExtendedFlags;
+	GameVersionSupportFlags gameVersionSupportFlags;
+	uint[16] explicitlySupportedGameVersions;
+	uint minimumSKSE64Version;
+}
+
+
 struct DLLPlugin
 {
 	static if (skse64Offsets.loadedPluginSize == 0x00000030)
