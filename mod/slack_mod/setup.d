@@ -468,55 +468,25 @@ allocatedSKSEskseAdjacentMemory:
 		global.addressOf.sksePluginFilePathCall = sections.text.ptr + skse64Offsets.pluginFilePathCall;
 	}
 
-	static if (hookingSKSEInitialiseViaCall)
-	{
-		global.addressOf.skseInitialiseCall = sections.text.ptr + skse64Offsets.initialiseCall;
-	}
-	else
-	{
-		global.addressOf.skseInitialiseTailReturn = sections.text.ptr + skse64Offsets.initialiseTailReturn;
-	}
+	global.addressOf.findDLLPluginsCall = sections.text.ptr + skse64Offsets.findDLLPluginsCall;
 
 	ubyte* code = cast(ubyte*) skseAdjacentMemory;
 	ubyte* c = code;
 
-	ubyte* skseInitialiseHook = c;
+	ubyte* findDLLPluginsHook = c;
 
-	static if (hookingSKSEInitialiseViaCall)
-	{
-		const(ubyte)* skseInitialise = x86TargetOf!5(global.addressOf.skseInitialiseCall);
+	const(ubyte)* findDLLPlugins = x86TargetOf!5(global.addressOf.findDLLPluginsCall);
 
-		*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 5, 4); *c++ = 40;             /+ sub rsp, 40 +/
-		c.writeDirectCallOf(skseInitialise); c += 5;                             /+ call skseInitialise +/
-		*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 0, 4); *c++ = 40;             /+ add rsp, 40 +/
-		c += c.writeJumpTo(cast(const(ubyte)*) &setUpAfterInitialisationOfSKSE); /+ jmp setUpAfterInitialisationOfSKSE +/
+	*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 5, 4); *c++ = 32;              /+ sub rsp, 32 +/
+	c += c.writeCallOf(cast(const(ubyte)*) &setUpBeforeSKSEPluginsAreLoaded); /+ call setUpBeforeSKSEPluginsAreLoaded +/
+	*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 0, 4); *c++ = 32;              /+ add rsp, 32 +/
+	c.writeNearJumpTo(findDLLPlugins); c += 5;                                /+ jmp findDLLPlugins +/
 
-		withCodeRegionMadeWritable(
-			global.addressOf.skseInitialiseCall,
-			5,
-			(scope ubyte* a, size_t s) {a.writeDirectCallOf(skseInitialiseHook);}
-		);
-	}
-	else
-	{
-		/+ SE, and AE353 are slightly different here in that `skseInitialiseCall`
-		   is a jmp instead of a call, and for whatever reason,
-		   changing it causes the game to crash, so instead we patch
-		   the initialisation function itself. +/
-
-		const(ubyte)* tailCall = x86TargetOf!5(global.addressOf.skseInitialiseTailReturn);
-
-		*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 5, 4); *c++ = 40;             /+ sub rsp, 40 +/
-		c.writeDirectCallOf(tailCall); c += 5;                                   /+ call tailCall +/
-		*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 0, 4); *c++ = 40;             /+ add rsp, 40 +/
-		c += c.writeJumpTo(cast(const(ubyte)*) &setUpAfterInitialisationOfSKSE); /+ jmp setUpAfterInitialisationOfSKSE +/
-
-		withCodeRegionMadeWritable(
-			global.addressOf.skseInitialiseTailReturn,
-			5,
-			(scope ubyte* a, size_t s) {a.writeNearJumpTo(skseInitialiseHook);}
-		);
-	}
+	withCodeRegionMadeWritable(
+		global.addressOf.findDLLPluginsCall,
+		5,
+		(scope ubyte* a, size_t s) {a.writeDirectCallOf(findDLLPluginsHook);}
+	);
 
 	version (SLACKVerificationMode)
 	{
@@ -699,20 +669,14 @@ allocatedSKSEskseAdjacentMemory:
 
 	FlushInstructionCache(thisProcess, code, 4.KB);
 
-	static if (hookingSKSEInitialiseViaCall)
-	{
-		FlushInstructionCache(thisProcess, global.addressOf.skseInitialiseCall, 5);
-	}
-	else
-	{
-		FlushInstructionCache(thisProcess, global.addressOf.skseInitialiseTailReturn, 5);
-	}
+	FlushInstructionCache(thisProcess, global.addressOf.findDLLPluginsCall, 5);
 
 	return true;
 }
 
 
-void setUpAfterInitialisationOfSKSE () nothrow @nogc
+pragma(inline, false)
+void setUpBeforeSKSEPluginsAreLoaded (ulong rcx) nothrow @nogc
 {
 	alias Config = ConfigurationLongLived.Flags;
 
@@ -772,6 +736,10 @@ void setUpAfterInitialisationOfSKSE () nothrow @nogc
 			}
 		);
 	}
+
+	__ir_pure!(`call void asm sideeffect inteldialect "", "{rcx}" (i64 %0)`, void)(
+		rcx
+	);
 }
 
 

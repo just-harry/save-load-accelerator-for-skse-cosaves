@@ -26,7 +26,6 @@ __gshared GlobalState global;
 
 
 enum bool shouldUseDLLNotifications = targetedGameVersion <= 0x01_06_161_0;
-enum bool hookingSKSEInitialiseViaCall = targetedGameArchetype != GameArchetype.se && targetedGameArchetype != GameArchetype.ae353;
 enum bool observingPluginFileNameViaCall = targetedGameVersion < 0x01_06_000_0;
 
 
@@ -66,15 +65,6 @@ struct ResolvedAddresses
 	std_string* skseCosaveSavePath;
 	std_vector!SerialisationStateForPlugin* cosaveAwarePlugins;
 
-	static if (hookingSKSEInitialiseViaCall)
-	{
-		ubyte* skseInitialiseCall;
-	}
-	else
-	{
-		ubyte* skseInitialiseTailReturn;
-	}
-
 	static if (observingPluginFileNameViaCall)
 	{
 		ubyte* sksePluginFilePathCall;
@@ -84,6 +74,7 @@ struct ResolvedAddresses
 		DLLPlugin** sksePluginBeingLoaded;
 	}
 
+	ubyte* findDLLPluginsCall;
 	ubyte* supplySKSEProviderLEA;
 	ubyte* createSKSECosave;
 	ubyte* restoreSKSECosave;
