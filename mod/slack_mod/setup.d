@@ -242,7 +242,7 @@ bool setUpEverythingWithSKSEDLL (scope ref wchar[MAX_PATH + 60] stringBuffer, sc
 		}
 		else
 		{
-			bool isKnownOutdatedVersion = false;
+			enum bool isKnownOutdatedVersion = false;
 		}
 
 		if (!isKnownOutdatedVersion)
