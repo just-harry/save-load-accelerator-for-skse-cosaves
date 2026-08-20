@@ -452,7 +452,14 @@ allocatedSKSEskseAdjacentMemory:
 
 	static if (!observingPluginFileNameViaCall)
 	{
-		global.addressOf.sksePluginBeingLoaded = cast(DLLPlugin**) (sections.data.ptr + skse64Offsets.pluginBeingLoaded);
+		static if (expectedSKSE64Version >= 0x02_02_007_0)
+		{
+			global.addressOf.indexOfSKSEPluginBeingLoaded = cast(DLLPluginIndex*) (sections.data.ptr + skse64Offsets.pluginBeingLoadedIndex);
+		}
+		else
+		{
+			global.addressOf.sksePluginBeingLoaded = cast(DLLPlugin**) (sections.data.ptr + skse64Offsets.pluginBeingLoaded);
+		}
 	}
 
 	global.addressOf.cosaveAwarePlugins = cast(std_vector!SerialisationStateForPlugin*) (sections.data.ptr + skse64Offsets.cosaveAwarePlugins);
@@ -468,25 +475,31 @@ allocatedSKSEskseAdjacentMemory:
 		global.addressOf.sksePluginFilePathCall = sections.text.ptr + skse64Offsets.pluginFilePathCall;
 	}
 
-	global.addressOf.findDLLPluginsCall = sections.text.ptr + skse64Offsets.findDLLPluginsCall;
+	static if (expectedSKSE64Version < 0x02_02_007_0)
+	{
+		global.addressOf.findDLLPluginsCall = sections.text.ptr + skse64Offsets.findDLLPluginsCall;
+	}
 
 	ubyte* code = cast(ubyte*) skseAdjacentMemory;
 	ubyte* c = code;
 
-	ubyte* findDLLPluginsHook = c;
+	static if (expectedSKSE64Version < 0x02_02_007_0)
+	{
+		ubyte* findDLLPluginsHook = c;
 
-	const(ubyte)* findDLLPlugins = x86TargetOf!5(global.addressOf.findDLLPluginsCall);
+		const(ubyte)* findDLLPlugins = x86TargetOf!5(global.addressOf.findDLLPluginsCall);
 
-	*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 5, 4); *c++ = 32;              /+ sub rsp, 32 +/
-	c += c.writeCallOf(cast(const(ubyte)*) &setUpBeforeSKSEPluginsAreLoaded); /+ call setUpBeforeSKSEPluginsAreLoaded +/
-	*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 0, 4); *c++ = 32;              /+ add rsp, 32 +/
-	c.writeNearJumpTo(findDLLPlugins); c += 5;                                /+ jmp findDLLPlugins +/
+		*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 5, 4); *c++ = 32;              /+ sub rsp, 32 +/
+		c += c.writeCallOf(cast(const(ubyte)*) &setUpBeforeSKSEPluginsAreLoaded); /+ call setUpBeforeSKSEPluginsAreLoaded +/
+		*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 0, 4); *c++ = 32;              /+ add rsp, 32 +/
+		c.writeNearJumpTo(findDLLPlugins); c += 5;                                /+ jmp findDLLPlugins +/
 
-	withCodeRegionMadeWritable(
-		global.addressOf.findDLLPluginsCall,
-		5,
-		(scope ubyte* a, size_t s) {a.writeDirectCallOf(findDLLPluginsHook);}
-	);
+		withCodeRegionMadeWritable(
+			global.addressOf.findDLLPluginsCall,
+			5,
+			(scope ubyte* a, size_t s) {a.writeDirectCallOf(findDLLPluginsHook);}
+		);
+	}
 
 	version (SLACKVerificationMode)
 	{
@@ -671,13 +684,22 @@ allocatedSKSEskseAdjacentMemory:
 
 	FlushInstructionCache(thisProcess, global.addressOf.findDLLPluginsCall, 5);
 
+	static if (expectedSKSE64Version >= 0x02_02_007_0)
+	{
+		setUpBeforeSKSEPluginsAreLoaded([]);
+	}
+
 	return true;
 }
 
 
-pragma(inline, false)
-void setUpBeforeSKSEPluginsAreLoaded (ulong rcx) nothrow @nogc
+void setUpBeforeSKSEPluginsAreLoaded (mixin(expectedSKSE64Version >= 0x02_02_007_0 ? q{void[0]} : q{ulong}) rcx) nothrow @nogc
 {
+	static if (expectedSKSE64Version < 0x02_02_007_0)
+	{
+		pragma(inline, false);
+	}
+
 	alias Config = ConfigurationLongLived.Flags;
 
 	SerialisationProvider* serialisationProvider = cast(SerialisationProvider*) (
@@ -737,9 +759,12 @@ void setUpBeforeSKSEPluginsAreLoaded (ulong rcx) nothrow @nogc
 		);
 	}
 
-	__ir_pure!(`call void asm sideeffect inteldialect "", "{rcx}" (i64 %0)`, void)(
-		rcx
-	);
+	static if (expectedSKSE64Version < 0x02_02_007_0)
+	{
+		__ir_pure!(`call void asm sideeffect inteldialect "", "{rcx}" (i64 %0)`, void)(
+			rcx
+		);
+	}
 }
 
 
@@ -791,7 +816,7 @@ static if (observingPluginFileNameViaCall)
 
 
 pragma(inline, false)
-void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (scope ulong rcx, ulong rdx) nothrow @nogc
+void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (ulong rcx, ulong rdx) nothrow @nogc
 {
 	SKSE64Provider* provider = global.addressOf.globalSKSE64Provider;
 
@@ -801,7 +826,16 @@ void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (scope ulong rcx, ulon
 	}
 	else
 	{
-		const(DLLPlugin)* pluginBeingLoaded = *global.addressOf.sksePluginBeingLoaded;
+		static if (expectedSKSE64Version >= 0x02_02_007_0)
+		{
+			DLLPluginIndex biasedIndexOfPluginBeingLoaded = *global.addressOf.indexOfSKSEPluginBeingLoaded;
+			const(DLLPlugin)* pluginBeingLoaded = (cast(DLLPluginIndex) (biasedIndexOfPluginBeingLoaded - 1)).dllPlugin;
+		}
+		else
+		{
+			const(DLLPlugin)* pluginBeingLoaded = *global.addressOf.sksePluginBeingLoaded;
+		}
+
 		const(std_string)* dllName = &pluginBeingLoaded.filePath;
 		SpecialPlugin currentSpecialPlugin = specialPluginFromDLLFileName(dllName.base, dllName.size);
 	}
@@ -942,6 +976,25 @@ bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint
 			{
 				return false;
 			}
+		}
+	}
+	else static if (targetedGameArchetype == GameArchetype.ae1170)
+	{
+		__gshared wchar[201] message = "Version 2.2.x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.8 of SKSE.\0";
+		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-792256:~:text=Skyrim%20Script%20Extender%20%28SKSE64%29%20Steam,2%2E2%2E8";
+
+		if (versionOf(skse64v2_2_06_globalSKSE64Provider) == 0x02_02_006_0)
+		{
+			message[12] = '6';
+		}
+		else if (versionOf(skse64v2_2_07_globalSKSE64Provider) == 0x02_02_007_0)
+		{
+			/+ I didn't even get a chance to release an update for 2.2.7. +/
+			message[12] = '7';
+		}
+		else
+		{
+			return false;
 		}
 	}
 	else static if (targetedGameArchetype == GameArchetype.ae1130)

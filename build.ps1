@@ -116,42 +116,54 @@ try
 
 	$DLLs = @(
 		[PSCustomObject] @{
-			Name = 'Save&LoadAcceleratorForSKSECosaves'
+			Name = '!!!!!!!##$Save&LoadAcceleratorForSKSECosaves'
 			Files = "$SourceBase/slack_mod/entrypoint.d"
-			ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves.def"
 			ResourceFile = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves.rc"
 			Variants = @(
 				[PSCustomObject] @{
-					Name = 'ae'
-					Files = "$SourceBase/game/target_ae.d"
+					Name = 'ae7_99'
+					Files = "$SourceBase/game/target_ae7_99.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSEPreloader.def"
+				}
+				[PSCustomObject] @{
+					Name = 'ae1170'
+					Files = "$SourceBase/game/target_ae1170.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSEPreloader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'ae1130'
 					Files = "$SourceBase/game/target_ae1130.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'ae640'
 					Files = "$SourceBase/game/target_ae640.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'ae353'
 					Files = "$SourceBase/game/target_ae353.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'se'
 					Files = "$SourceBase/game/target_se.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'vr'
 					Files = "$SourceBase/game/target_vr.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'gog'
 					Files = "$SourceBase/game/target_gog.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'gog659'
 					Files = "$SourceBase/game/target_gog659.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
 				}
 			)
 		}
@@ -229,7 +241,7 @@ try
 			lld-link `
 				/out:"$Base/$($DLL.Name).dll" `
 				/dll `
-				/def:"$($DLL.ExportsDef)" `
+				/def:"$($Variant.ExportsDef)" `
 				$(if ($Configuration -eq 'release') {'/release'}) `
 				/largeaddressaware `
 				/nodefaultlib `

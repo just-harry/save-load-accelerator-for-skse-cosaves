@@ -80,7 +80,7 @@ struct DLLPlugin
 		DLLPluginMetadata metadata;
 		ubyte[skse64Offsets.loadedPluginSize - 32] padding;
 	}
-	else static if (skse64Offsets.loadedPluginSize == 0x000003B0)
+	else static if (skse64Offsets.loadedPluginSize == 0x000003B0 || skse64Offsets.loadedPluginSize == 0x000003B8)
 	{
 		std_string filePath;
 		HMODULE dll;

@@ -2,4 +2,6 @@
 EXPORTS
 	Initialize=SaveLoadAcceleratorForSKSECosaves_InitialiseViaPreloader @1
 	SaveLoadAcceleratorForSKSECosaves_GetVersion @2
+	SaveLoadAcceleratorForSKSECosaves_GetReleaseVersion @3
+	_fltused @4 DATA
 

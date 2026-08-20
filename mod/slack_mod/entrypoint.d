@@ -3,6 +3,9 @@
 
 module slack_mod.entrypoint;
 
+import game.target;
+import skse64.dll_plugins;
+import skse64.hacks.versioning;
 import slack_common.bindings;
 import slack_common.memory;
 import slack_common.text;
@@ -30,18 +33,53 @@ BOOL dllEntrypoint (HINSTANCE hinstDLL, uint fdwReason, scope void* lpvReserved)
 }
 
 
-extern(Windows)
-void SaveLoadAcceleratorForSKSECosaves_InitialiseViaPreloader () nothrow @nogc
+static if (expectedSKSE64Version >= 0x02_02_007_0)
 {
-	wchar[MAX_PATH + 60] stringBuffer = void;
-	setUpEverything(stringBuffer);
+	extern(C)
+	immutable(DLLPluginVersionMetadata) SKSEPlugin_Version = {
+		schemaVersion: DLLPluginVersionMetadata.SchemaVersion.v1,
+		pluginVersion: /+release-version+/0x01_03_003_0,
+		name: "Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.)",
+		authorName: `"Just Harry"`,
+		emailAddress: "regarding__s_l_a_c_k_@harrygillanders.com",
+		/+ These support flags are a complete lie. We do our own version checking. +/
+		gameVersionSupportExtendedFlags: DLLPluginVersionMetadata.GameVersionSupportExtendedFlags.doesNotDependOnFixedOffsets,
+		gameVersionSupportFlags: DLLPluginVersionMetadata.GameVersionSupportFlags.hasNoHardcodedAddresses,
+		explicitlySupportedGameVersions: [targetedGameVersion],
+	};
+
+
+	extern(C)
+	bool SKSEPlugin_Preload (const(SKSE64Provider)* skse) nothrow @nogc
+	{
+		wchar[MAX_PATH + 60] stringBuffer = void;
+		setUpEverything(stringBuffer);
+		return true;
+	}
+}
+else
+{
+	extern(Windows)
+	void SaveLoadAcceleratorForSKSECosaves_InitialiseViaPreloader () nothrow @nogc
+	{
+		wchar[MAX_PATH + 60] stringBuffer = void;
+		setUpEverything(stringBuffer);
+	}
 }
 
 
+/+ This is version as-in "incremented when a backwards-incompatible change to the API is made"-version. +/
 extern(Windows)
 uint SaveLoadAcceleratorForSKSECosaves_GetVersion () @safe pure nothrow @nogc
 {
 	return 0;
+}
+
+
+extern(Windows)
+uint SaveLoadAcceleratorForSKSECosaves_GetReleaseVersion () @safe pure nothrow @nogc
+{
+	return /+release-version+/0x01_03_003_0;
 }
 
 

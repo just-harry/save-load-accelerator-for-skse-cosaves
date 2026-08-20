@@ -19,6 +19,7 @@ import slack_mod.save_load;
 import slack_mod.setup;
 
 import skse64.dll_plugins;
+import skse64.hacks.versioning;
 import skse64.serialisation;
 
 
@@ -71,7 +72,17 @@ struct ResolvedAddresses
 	}
 	else
 	{
-		DLLPlugin** sksePluginBeingLoaded;
+		static if (expectedSKSE64Version >= 0x02_02_007_0)
+		{
+			/+ As of SKSE64 v2.2.7, the address of the plugin currently being loaded
+			   is never actually read, and so the optimiser has eliminated all of its writes.
+			   In its stead we use the plugin's index. +/
+			DLLPluginIndex* indexOfSKSEPluginBeingLoaded;
+		}
+		else
+		{
+			DLLPlugin** sksePluginBeingLoaded;
+		}
 	}
 
 	ubyte* findDLLPluginsCall;
