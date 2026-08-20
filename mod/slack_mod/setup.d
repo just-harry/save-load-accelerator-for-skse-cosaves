@@ -1002,23 +1002,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint
 
 	if (button == IDOK)
 	{
-		extern(Windows)
-		static uint openURL (scope void* context)
-		{
-			CoInitializeEx(null, COINIT.COINIT_APARTMENTTHREADED | COINIT.COINIT_DISABLE_OLE1DDE);
-			ShellExecuteW(null, null, url.ptr, null, null, SW_RESTORE);
-			CoUninitialize;
-			return 0;
-		}
-
-		HANDLE thread = void;
-
-		/+ Firefox causes ShellExecuteW to hang until Firefox receives focus from the user.
-		   wtf firefox ??? +/
-		if (makeThread(&thread, &openURL) == 0)
-		{
-			NtClose(thread);
-		}
+		openURL(url.ptr);
 	}
 
 	return true;

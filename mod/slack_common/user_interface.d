@@ -8,6 +8,7 @@ import game;
 import slack_common.bindings;
 import slack_common.memory;
 import slack_common.text;
+import slack_common.threading;
 
 
 enum immutable(wchar[]) errorDialogTitle = "Save & Load Accelerator for SKSE Cosaves v1.3.2 Error";
@@ -124,5 +125,27 @@ in (errorCode == 0 || ((stringBuffer.length >= 28) & (stringBuffer.length - 27 >
 	*s = '\0';
 
 	reportErrorToUser(stringBuffer.ptr, flags);
+}
+
+
+void openURL (scope const(wchar)* url) @trusted nothrow @nogc
+{
+	extern(Windows)
+	static uint openURLViaThread (scope void* context)
+	{
+		CoInitializeEx(null, COINIT.COINIT_APARTMENTTHREADED | COINIT.COINIT_DISABLE_OLE1DDE);
+		ShellExecuteW(null, null, cast(const(wchar)*) context, null, null, SW_RESTORE);
+		CoUninitialize;
+		return 0;
+	}
+
+	HANDLE thread = void;
+
+	/+ Firefox causes ShellExecuteW to hang until Firefox receives focus from the user.
+	   wtf firefox ??? +/
+	if (makeThread(&thread, &openURLViaThread, cast(void*) url) == 0)
+	{
+		NtClose(thread);
+	}
 }
 
