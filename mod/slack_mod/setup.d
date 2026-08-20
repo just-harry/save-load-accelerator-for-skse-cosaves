@@ -793,15 +793,6 @@ static if (observingPluginFileNameViaCall)
 pragma(inline, false)
 void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (scope ulong rcx, ulong rdx) nothrow @nogc
 {
-	static if (targetedGameVersion >= 0x01_06_000_0)
-	{
-		HMODULE dll = *cast(HMODULE*) (rdx + 0x20);
-	}
-	else
-	{
-		HMODULE dll = *cast(HMODULE*) rdx;
-	}
-
 	SKSE64Provider* provider = global.addressOf.globalSKSE64Provider;
 
 	static if (observingPluginFileNameViaCall)
