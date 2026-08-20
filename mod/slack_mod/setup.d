@@ -260,13 +260,19 @@ bool setUpEverythingWithSKSEDLL (scope ref wchar[MAX_PATH + 60] stringBuffer, sc
 			s += 20;
 			expectedSKSE64Version.asHexInto!true(s[0 .. 8]);
 			s += 8;
-			blit(s, "; Actual version: 0x"w.ptr, 20);
-			s += 20;
+			blit(s, "; Detected version: 0x"w.ptr, 22);
+			s += 22;
 			skse64Version.asHexInto!true(s[0 .. 8]);
 			s += 8;
 			*s++ = '.';
 			*s++ = '\0';
 			reportErrorToUser(stringBuffer.ptr);
+
+			showMessageBox(
+				"This error comes from S.L.A.C.K., not SKSE.\r\nDo not report this to the SKSE team.",
+				"IMPORTANT",
+				MB_OK | MB_ICONINFORMATION
+			);
 		}
 
 		return false;
