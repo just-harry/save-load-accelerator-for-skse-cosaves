@@ -32,26 +32,26 @@ Saves made with this plugin installed can be loaded without this plugin installe
 
 [size=4][b][u]Requirements[/u][/b][/size]
 [list]
-[*]A DLL preloader: either the [url=https://www.nexusmods.com/skyrimspecialedition/mods/17230]"SSE Engine Fixes - SKSE64 Preloader"[/url], or the [url=https://www.nexusmods.com/skyrimspecialedition/mods/10546]"DLL Plugin Loader"[/url] will do.[/*]
 [*][url=https://skse.silverlock.org/]SKSE[/url] (duh).[/*]
+[*]For versions 2.2.6-and-older of SKSE: a DLL preloader; either the [url=https://www.nexusmods.com/skyrimspecialedition/mods/17230]"SSE Engine Fixes - SKSE64 Preloader"[/url], or the [url=https://www.nexusmods.com/skyrimspecialedition/mods/10546]"DLL Plugin Loader"[/url] will do.[/*]
 [/list]
 
 [size=4][b][u]Installation[/u][/b][/size]
-After ensuring that a DLL preloader is installed, this plugin can be installed like any other via your mod-manager of choice.
+After ensuring that you are using at-least version 2.2.8 of SKSE, or that a DLL preloader is installed, this plugin can be installed like any other via your mod-manager of choice.
 
 The plugin will be installed correctly by default by all good mod-managers.
-When installed correctly, the path of the DLL relative to the game's folder will be "Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll".
+When installed correctly, the path of the DLL relative to the game's folder will be either: "SKSE\Plugins\!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll" for versions 2.2.7-and-newer of SKSE, or "Data\DLLPlugins\!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll" for versions 2.2.6-and-older of SKSE.
 
-Also, please note that only the versions for Skyrim AE v1.6.1170 and Skyrim SE v1.5.97 have been tested by me, all other version are untested (but should work).
+Also, please note that only the versions for Skyrim AE v1.7.99, Skyrim AE v1.6.1170 and Skyrim SE v1.5.97 have been tested by me, all other version are untested (but should work).
 
 [size=4][b][u]Usage[/u][/b][/size]
 This plugin is active by default when it is installed.
 
 By default, the time taken to save or load a game will be logged to the in-game console.
 
-The "Save&LoadAcceleratorForSKSECosaves.ini" file next to the "Save&LoadAcceleratorForSKSECosaves.dll" file can be edited to configure this plugin.
+The "!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini" file next to the "!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll" file can be edited to configure this plugin.
 
-If you would like to eke out even more speed for saving the game, the experimental parallel-saving feature can be enabled via the "Save&LoadAcceleratorForSKSECosaves.ini" file.
+If you would like to eke out even more speed for saving the game, the experimental parallel-saving feature can be enabled via the "!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini" file.
 
 [size=4][b][u]Compatibility[/u][/b][/size]
 This plugin should be compatible with just about everything, with the exception of other plugins that patch or hook SKSE's code, potentially.
@@ -133,4 +133,8 @@ A: Look, you try coming up with a catchy name that forms a funny acronym.
 
 Q: Why the dots in the acronym?
 A: Without them I'd be infringing upon the wordmark of a chatroom-providing company.
+
+Q: Why is the plugin's DLL file named "!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll"?
+A: For perfectly sane reasons relating to numerology, I assure you.
+(Really, the reason is to help ensure that S.L.A.C.K. is loaded before any other SKSE plugin, which is important to guarantee S.L.A.C.K.'s proper functioning.)
 
