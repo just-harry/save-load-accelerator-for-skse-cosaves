@@ -1,6 +1,24 @@
 
 # Save & Load Accelerator for SKSE Cosaves: Changelog
 
+## Version 1.3.3 (2026-08-21)
+
+The fourteenth release of this plugin, the changes are as follows:
+- Version 2.2.8 of SKSE is now supported, and required(!), for version 1.6.1170 of Skyrim SE.
+- Version 2.2.6 of SKSE is no longer supported. If you would like to continue using version 2.2.6 of SKSE, keep using version 1.3.2 of S.L.A.C.K.: you're not missing out on anything major.
+- Version 2.3.0 of SKSE is now supported, for version 1.7.99 of Skyrim SE.
+- For versions 1.6.1170-and-later of Skyrim SE, SSE Engine Fixes' SKSE64 Preloader is no longer required as SKSE64's builtin preloader is used instead.
+- The plugin's DLL file is now named `!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll`. There is a perfectly sane reason for this, I assure you.
+- The plugin's debug information (the PDB file) now has a snazzy base path in the form of `S.L.A.C.K.-vX.Y.Z`, instead of my embarrassingly long `C:\Shared\Programming\Modding\SkyrimSE\SaveLoadAcceleratorForCosaveK`.
+- The reliability of S.L.A.C.K.'s function injection has been improved. (This is a mostly theoretical improvement).
+- A use-after-free related to the `SKSEDLLName` INI setting has been fixed.
+- The error message for unrecognised versions of SKSE has been improved.
+- The error message for S.L.A.C.K. failing to find SKSE's DLL has been improved.
+
+---
+
+As it's been a while, and as this version introduces support for two new versions of SKSE, I'm recommending two songs in this changelog entry. The first is ["Model Collapse" by dead space cadets](https://www.youtube.com/watch?v=YxJWGcOKAH0); the second is ["i drink and drive" by takumisf](https://www.youtube.com/watch?v=r9-LhM0-Hj8). My name is Harry, and I am a Tetoholic.
+
 ## Version 1.3.2 (2026-01-12)
 
 The thirteenth release of this plugin, the changes are as follows:
