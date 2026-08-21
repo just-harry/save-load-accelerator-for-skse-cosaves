@@ -104,8 +104,6 @@ bool setUpEverything (scope ref wchar[MAX_PATH + 60] stringBuffer) nothrow @nogc
 		{
 			error = mapFileForReading(iniFile, &ini);
 
-			scope(exit) unmapFile(ini.ptr);
-
 			NtClose(iniFile);
 
 			if (error)
@@ -154,6 +152,14 @@ bool setUpEverything (scope ref wchar[MAX_PATH + 60] stringBuffer) nothrow @nogc
 				skseDLLNameUTF8 = defaultSKSE64DLLNameUTF8.ptr;
 				skseDLLNameLengthUTF8 = defaultSKSE64DLLNameUTF8.length;
 			}
+		}
+	}
+
+	scope(exit)
+	{
+		if (ini != null)
+		{
+			unmapFile(ini.ptr);
 		}
 	}
 
