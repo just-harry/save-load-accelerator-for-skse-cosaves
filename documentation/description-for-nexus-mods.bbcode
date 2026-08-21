@@ -32,9 +32,10 @@ Saves made with this plugin installed can be loaded without this plugin installe
 
 [size=4][b][u]Requirements[/u][/b][/size]
 [list]
-[*] A DLL preloader: either the [url=https://www.nexusmods.com/skyrimspecialedition/mods/17230]"SSE Engine Fixes - SKSE64 Preloader"[/url], or the [url=https://www.nexusmods.com/skyrimspecialedition/mods/10546]"DLL Plugin Loader"[/url] will do.
-[*] [url=https://skse.silverlock.org/]SKSE[/url] (duh).
+[*]A DLL preloader: either the [url=https://www.nexusmods.com/skyrimspecialedition/mods/17230]"SSE Engine Fixes - SKSE64 Preloader"[/url], or the [url=https://www.nexusmods.com/skyrimspecialedition/mods/10546]"DLL Plugin Loader"[/url] will do.[/*]
+[*][url=https://skse.silverlock.org/]SKSE[/url] (duh).[/*]
 [/list]
+
 [size=4][b][u]Installation[/u][/b][/size]
 After ensuring that a DLL preloader is installed, this plugin can be installed like any other via your mod-manager of choice.
 
@@ -53,7 +54,6 @@ The "Save&LoadAcceleratorForSKSECosaves.ini" file next to the "Save&LoadAccelera
 If you would like to eke out even more speed for saving the game, the experimental parallel-saving feature can be enabled via the "Save&LoadAcceleratorForSKSECosaves.ini" file.
 
 [size=4][b][u]Compatibility[/u][/b][/size]
-
 This plugin should be compatible with just about everything, with the exception of other plugins that patch or hook SKSE's code, potentially.
 In practice, patching and hooking SKSE itself is very rare.
 
@@ -97,8 +97,8 @@ What SKSE is doing is providing an API that suggests that SKSE itself is taking 
 This is the API SKSE provides for cosave saving:
 [code]bool WriteRecord (uint32_t type, uint32_t version, const void *buffer, uint32_t length);
 bool OpenRecord (uint32_t type, uint32_t version);
-bool WriteRecordData (const void *buffer, uint32_t length);
-[/code]
+bool WriteRecordData (const void *buffer, uint32_t length);[/code]
+
 [i]OpenRecord[/i] is used to begin a self-contained chunk of data.
 [i]WriteRecordData[/i] is used to append data to the last record began by [i]OpenRecord[/i].
 [i]WriteRecord[/i] is merely a convenience wrapper for calling [i]OpenRecord[/i] and then [i]WriteRecordData[/i].
@@ -111,8 +111,7 @@ So what this plugin does to remedy this pretty state of things is it reimplement
 (Some trickery with virtual-memory and an vectored-exception-handler is used to commit the region of memory gradually, without incurring the overhead of any bounds-checks.)
 
 For loading, the situation is better: typically each call to [i]GetNextRecordInfo[/i] and [i]ReadRecordData[/i] results in only one transitive call of [i]ReadFile[/i].
-The optimisation this plugin makes is similarly obvious: the file is read into memory all at once, and the API functions simply blit the data into the buffer supplied by the caller.
-[/spoiler]
+The optimisation this plugin makes is similarly obvious: the file is read into memory all at once, and the API functions simply blit the data into the buffer supplied by the caller.[/spoiler]
 
 [size=4][b][u]Source-Code[/u][/b][/size]
 The source-code for this plugin is available at [url=https://github.com/just-harry/save-load-accelerator-for-skse-cosaves]https://github.com/just-harry/save-load-accelerator-for-skse-cosaves[/url].
