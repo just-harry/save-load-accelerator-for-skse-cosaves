@@ -161,7 +161,7 @@ static if (shouldUseDLLNotifications)
 			{
 				if (caseInsensitiveASCIIEquality(notification.Loaded.BaseDllName.Buffer, skseDLLName.ptr, skseDLLName.length))
 				{
-					wchar[MAX_PATH + 60] stringBuffer = void;
+					wchar[512] stringBuffer = void;
 
 					setUpEverythingWithSKSEDLL(stringBuffer, cast(ubyte*) notification.Loaded.DllBase);
 

@@ -106,7 +106,7 @@ struct ConfigurationTransient
 }
 
 
-wchar* findConfigurationFilePath (return scope ref wchar[MAX_PATH + 60] stringBuffer, HMODULE dll) nothrow @nogc
+wchar* findConfigurationFilePath (return scope ref wchar[512] stringBuffer, HMODULE dll) nothrow @nogc
 {
 	uint error = void;
 

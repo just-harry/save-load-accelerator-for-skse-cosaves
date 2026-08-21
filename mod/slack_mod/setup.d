@@ -36,7 +36,7 @@ import skse64.hacks.versioning;
 import skse64.hacks.offsets;
 
 
-bool setUpEverything (scope ref wchar[MAX_PATH + 60] stringBuffer) nothrow @nogc
+bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 {
 	alias Config = ConfigurationLongLived.Flags;
 
@@ -219,7 +219,7 @@ bool setUpEverything (scope ref wchar[MAX_PATH + 60] stringBuffer) nothrow @nogc
 }
 
 
-bool setUpEverythingWithSKSEDLL (scope ref wchar[MAX_PATH + 60] stringBuffer, scope ubyte* skseDLL) nothrow @nogc
+bool setUpEverythingWithSKSEDLL (scope ref wchar[512] stringBuffer, scope ubyte* skseDLL) nothrow @nogc
 {
 	alias Config = ConfigurationLongLived.Flags;
 
@@ -930,7 +930,7 @@ void specialSKSE64AssignStateSaver (
 }
 
 
-bool isOutdatedSKSEVersion () (scope ref wchar[MAX_PATH + 60] stringBuffer, uint skse64Version, scope const(ubyte)* skseRData) nothrow @nogc
+bool isOutdatedSKSEVersion () (scope ref wchar[512] stringBuffer, uint skse64Version, scope const(ubyte)* skseRData) nothrow @nogc
 {
 	uint versionOf (uint offset)
 	{

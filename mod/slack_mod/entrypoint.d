@@ -52,7 +52,7 @@ static if (expectedSKSE64Version >= 0x02_02_007_0)
 	extern(C)
 	bool SKSEPlugin_Preload (const(SKSE64Provider)* skse) nothrow @nogc
 	{
-		wchar[MAX_PATH + 60] stringBuffer = void;
+		wchar[512] stringBuffer = void;
 		setUpEverything(stringBuffer);
 		return true;
 	}
@@ -62,7 +62,7 @@ else
 	extern(Windows)
 	void SaveLoadAcceleratorForSKSECosaves_InitialiseViaPreloader () nothrow @nogc
 	{
-		wchar[MAX_PATH + 60] stringBuffer = void;
+		wchar[512] stringBuffer = void;
 		setUpEverything(stringBuffer);
 	}
 }
