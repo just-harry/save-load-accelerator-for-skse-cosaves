@@ -207,7 +207,7 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 					  "The SKSE64 DLL could not be found.\r\n"
 					~ "This usually indicates that SKSE's loader was not used to launch to game.\r\n\r\n"
 					~ "If you use the Vortex mod manager, please try disabling and then re-enabling \"Skyrim Script Extender 64\" as the default-launcher/primary-tool in the \"Tools\" section/page.\r\n\r\n"
-					~ "Otherwise, you may need to set, or change, the value of the \"SKSEDLLName\" setting in the \"Save&LoadAcceleratorForSKSECosaves.ini\" file.\r\n"
+					~ "Otherwise, you may need to set, or change, the value of the \"SKSEDLLName\" setting in the \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini\" file.\r\n"
 				);
 
 				reportErrorToUser(stringBuffer, missingDLLMessage, hresultFromLastError(getLastError));
