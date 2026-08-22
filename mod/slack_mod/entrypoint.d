@@ -3,7 +3,7 @@
 
 module slack_mod.entrypoint;
 
-import game.target;
+import game;
 import ldc.attributes : assumeUsed, section;
 import skse64.dll_plugins;
 import skse64.hacks.versioning;
@@ -54,7 +54,6 @@ static if (expectedSKSE64Version >= 0x02_02_007_0)
 		/+ These support flags are a complete lie. We do our own version checking. +/
 		gameVersionSupportExtendedFlags: DLLPluginVersionMetadata.GameVersionSupportExtendedFlags.doesNotDependOnFixedOffsets,
 		gameVersionSupportFlags: DLLPluginVersionMetadata.GameVersionSupportFlags.hasNoHardcodedAddresses,
-		explicitlySupportedGameVersions: [targetedGameVersion],
 	};
 
 
@@ -62,7 +61,52 @@ static if (expectedSKSE64Version >= 0x02_02_007_0)
 	bool SKSEPlugin_Preload (const(SKSE64Provider)* skse) nothrow @nogc
 	{
 		wchar[512] stringBuffer = void;
-		setUpEverything(stringBuffer);
+		uint skse64Version = skse.skse64Version;
+
+		if (skse64Version != expectedSKSE64Version)
+		{
+			showComprehensiveSKSEVersionMismatchMessage(stringBuffer, skse64Version, cast(void[0]) []);
+		}
+		else
+		{
+			setUpEverything(stringBuffer);
+		}
+
+		return true;
+	}
+
+
+	extern(C)
+	bool SKSEPlugin_Load (const(SKSE64Provider)* skse) nothrow @nogc
+	{
+		/+ Version checking for SKSE v2.2.7-and-later is handled via SKSEPlugin_Preload.
+		   Older versions of SKSE don't provide preloading, hence this fallback. +/
+		if (skse.skse64Version > 0x02_02_006_0)
+		{
+			return true;
+		}
+
+		static if (targetedGameArchetype == GameArchetype.ae1170)
+		{
+			if (skse.skse64Version == 0x02_02_006_0)
+			{
+				static immutable(wchar[203]) message = "Version 2.2.6 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\nPlease update to version 2.2.8 of SKSE.\0";
+				enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-792256:~:text=Skyrim%20Script%20Extender%20%28SKSE64%29%20Steam,2%2E2%2E8";
+
+				uint button = showMessageBox(message.ptr, errorDialogTitle.ptr, MB_OKCANCEL | MB_ICONHAND);
+
+				if (button == IDOK)
+				{
+					openURL(url.ptr);
+				}
+
+				return true;
+			}
+		}
+
+		wchar[512] stringBuffer = void;
+		showGenericSKSEVersionMismatchMessage(stringBuffer, skse.skse64Version);
+
 		return true;
 	}
 }

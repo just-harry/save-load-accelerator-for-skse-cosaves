@@ -246,39 +246,7 @@ bool setUpEverythingWithSKSEDLL (scope ref wchar[512] stringBuffer, scope ubyte*
 
 	if (skse64Version != expectedSKSE64Version)
 	{
-		static if (__traits(compiles, isOutdatedSKSEVersion(stringBuffer, skse64Version, sections.rdata.ptr)))
-		{
-			bool isKnownOutdatedVersion = isOutdatedSKSEVersion(stringBuffer, skse64Version, sections.rdata.ptr);
-		}
-		else
-		{
-			enum bool isKnownOutdatedVersion = false;
-		}
-
-		if (!isKnownOutdatedVersion)
-		{
-			wchar* s = stringBuffer.ptr;
-			blit(s, "This version of the SKSE64 DLL is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease ensure you are using the correct version of S.L.A.C.K. for your version of the game.\r\n"w.ptr, 204);
-			s += 204;
-			blit(s, "Expected version: 0x"w.ptr, 20);
-			s += 20;
-			expectedSKSE64Version.asHexInto!true(s[0 .. 8]);
-			s += 8;
-			blit(s, "; Detected version: 0x"w.ptr, 22);
-			s += 22;
-			skse64Version.asHexInto!true(s[0 .. 8]);
-			s += 8;
-			*s++ = '.';
-			*s++ = '\0';
-			reportErrorToUser(stringBuffer.ptr);
-
-			showMessageBox(
-				"This error comes from S.L.A.C.K., not SKSE.\r\nDo not report this to the SKSE team.",
-				"IMPORTANT",
-				MB_OK | MB_ICONINFORMATION
-			);
-		}
-
+		showComprehensiveSKSEVersionMismatchMessage(stringBuffer, skse64Version, sections.rdata.ptr);
 		return false;
 	}
 
@@ -934,16 +902,85 @@ void specialSKSE64AssignStateSaver (
 }
 
 
-bool isOutdatedSKSEVersion () (scope ref wchar[512] stringBuffer, uint skse64Version, scope const(ubyte)* skseRData) nothrow @nogc
+pragma(inline, true)
+void showComprehensiveSKSEVersionMismatchMessage (T) (
+	scope ref wchar[512] stringBuffer,
+	uint skse64Version,
+	scope T versionContext
+) nothrow @nogc
 {
-	uint versionOf (uint offset)
+	static if (__traits(compiles, isOutdatedSKSEVersion(stringBuffer, skse64Version, versionContext)))
 	{
-		return (cast(const(SKSE64Provider)*) (skseRData + offset)).skse64Version;
+		bool isKnownOutdatedVersion = isOutdatedSKSEVersion(stringBuffer, skse64Version, versionContext);
+	}
+	else
+	{
+		enum bool isKnownOutdatedVersion = false;
+	}
+
+	if (!isKnownOutdatedVersion)
+	{
+		showGenericSKSEVersionMismatchMessage(stringBuffer, skse64Version);
+	}
+}
+
+
+pragma(inline, false)
+void showGenericSKSEVersionMismatchMessage (scope ref wchar[512] stringBuffer, uint detectedSKSE64Version) nothrow @nogc
+{
+	wchar* s = stringBuffer.ptr;
+	blit(s, "This version of the SKSE64 DLL is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease ensure you are using the correct version of S.L.A.C.K. for your version of the game.\r\n"w.ptr, 204);
+	s += 204;
+	blit(s, "Expected version: 0x"w.ptr, 20);
+	s += 20;
+	expectedSKSE64Version.asHexInto!true(s[0 .. 8]);
+	s += 8;
+	blit(s, "; Detected version: 0x"w.ptr, 22);
+	s += 22;
+	detectedSKSE64Version.asHexInto!true(s[0 .. 8]);
+	s += 8;
+	*s++ = '.';
+	*s++ = '\0';
+	reportErrorToUser(stringBuffer.ptr);
+
+	showMessageBox(
+		"The previous error came from S.L.A.C.K., not SKSE.\r\nDo not report it to the SKSE team.",
+		"IMPORTANT",
+		MB_OK | MB_ICONINFORMATION
+	);
+
+	/+ Open S.L.A.C.K.'s Nexus Mods page so that people who unknowingly
+	   installed S.L.A.C.K. via a collection don't go and bug Ian about it. +/
+	openURL("https://www.nexusmods.com/skyrimspecialedition/mods/163969");
+}
+
+
+bool isOutdatedSKSEVersion (T) (scope ref wchar[512] stringBuffer, uint skse64Version, scope const(T) versionContext) nothrow @nogc
+{
+	static if (is(T == ubyte*))
+	{
+		alias skseRData = versionContext;
+
+		uint versionOf (uint offset)
+		{
+			pragma(inline, true);
+			return (cast(const(SKSE64Provider)*) (skseRData + offset)).skse64Version;
+		}
+	}
+	else
+	{
+		static assert(T.sizeof == 0);
+
+		uint versionOf (uint offset)
+		{
+			pragma(inline, true);
+			return skse64Version;
+		}
 	}
 
 	static if (targetedGameArchetype == GameArchetype.se)
 	{
-		__gshared wchar[203] message = "Version 2.0.1x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.0.20 of SKSE.\0";
+		__gshared wchar[205] message = "Version 2.0.1x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\nPlease update to version 2.0.20 of SKSE.\0";
 		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-233411:~:text=2%2E0%2E20";
 
 		if (versionOf(skse64v2_0_17_globalSKSE64Provider) == 0x02_00_011_0)
@@ -966,7 +1003,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[512] stringBuffer, uint skse64Ver
 	}
 	else static if (targetedGameArchetype == GameArchetype.vr)
 	{
-		__gshared wchar[203] message = "Version 2.0.xx of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.0.12 of SKSE.\0";
+		__gshared wchar[205] message = "Version 2.0.xx of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\nPlease update to version 2.0.12 of SKSE.\0";
 		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30457?tab=files#file-expander-header-499284:~:text=2%2E0%2E12,-Compatible";
 
 		if (versionOf(skseVRv2_0_11_globalSKSE64Provider) == 0x02_00_00B_0)
@@ -996,7 +1033,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[512] stringBuffer, uint skse64Ver
 	}
 	else static if (targetedGameArchetype == GameArchetype.ae1170)
 	{
-		__gshared wchar[201] message = "Version 2.2.x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.8 of SKSE.\0";
+		__gshared wchar[203] message = "Version 2.2.x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\nPlease update to version 2.2.8 of SKSE.\0";
 		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-792256:~:text=Skyrim%20Script%20Extender%20%28SKSE64%29%20Steam,2%2E2%2E8";
 
 		if (versionOf(skse64v2_2_06_globalSKSE64Provider) == 0x02_02_006_0)
@@ -1015,7 +1052,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[512] stringBuffer, uint skse64Ver
 	}
 	else static if (targetedGameArchetype == GameArchetype.ae1130)
 	{
-		static immutable(wchar[201]) message = "Version 2.2.4 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.5 of SKSE.\0";
+		static immutable(wchar[203]) message = "Version 2.2.4 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\nPlease update to version 2.2.5 of SKSE.\0";
 		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-233411:~:text=2%2E2%2E5";
 
 		/+ The offset of `globalSKSE64Provider.skse64Version` didn't change
@@ -1029,7 +1066,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[512] stringBuffer, uint skse64Ver
 	}
 	else static if (targetedGameArchetype == GameArchetype.ae640)
 	{
-		__gshared wchar[201] message = "Version 2.2.x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.3 of SKSE.\0";
+		__gshared wchar[203] message = "Version 2.2.x of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\nPlease update to version 2.2.3 of SKSE.\0";
 		/+ Having the text-fragment match on the upload time is kind of gross, but it's the only way (download count excepted) to disambiguate between the Steam and GOG versions. +/
 		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-323365:~:text=8%3A09PM,2%2E2%2E3";
 
@@ -1046,7 +1083,7 @@ bool isOutdatedSKSEVersion () (scope ref wchar[512] stringBuffer, uint skse64Ver
 	}
 	else static if (targetedGameArchetype == GameArchetype.gog659)
 	{
-		static immutable(wchar[207]) message = "Version 2.2.2 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease update to version 2.2.3 (GOG) of SKSE.\0";
+		static immutable(wchar[209]) message = "Version 2.2.2 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\nPlease update to version 2.2.3 (GOG) of SKSE.\0";
 		/+ Again with the text-fragment matching on the upload time grossness. +/
 		enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-323366:~:text=8%3A10PM,2%2E2%2E3";
 
