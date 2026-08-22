@@ -1,8 +1,8 @@
 
 EXPORTS
-	SKSEPlugin_Version @1 DATA
+	SKSEPlugin_Preload @1
 	SaveLoadAcceleratorForSKSECosaves_GetVersion @2
 	SaveLoadAcceleratorForSKSECosaves_GetReleaseVersion @3
-	SKSEPlugin_Preload @4
 	_fltused @5 DATA
+	SKSEPlugin_Version @4 DATA
 
