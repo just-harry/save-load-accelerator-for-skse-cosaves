@@ -47,7 +47,7 @@ static if (expectedSKSE64Version >= 0x02_02_007_0)
 	extern(C)
 	immutable(DLLPluginVersionMetadata) SKSEPlugin_Version = {
 		schemaVersion: DLLPluginVersionMetadata.SchemaVersion.v1,
-		pluginVersion: /+release-version+/0x01_03_003_0,
+		pluginVersion: /+release-version+/0x01_03_004_0,
 		name: "Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.)",
 		authorName: `"Just Harry"`,
 		emailAddress: "regarding__s_l_a_c_k_@harrygillanders.com",
@@ -132,7 +132,7 @@ uint SaveLoadAcceleratorForSKSECosaves_GetVersion () @safe pure nothrow @nogc
 extern(Windows)
 uint SaveLoadAcceleratorForSKSECosaves_GetReleaseVersion () @safe pure nothrow @nogc
 {
-	return /+release-version+/0x01_03_003_0;
+	return /+release-version+/0x01_03_004_0;
 }
 
 
