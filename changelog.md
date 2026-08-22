@@ -1,6 +1,17 @@
 
 # Save & Load Accelerator for SKSE Cosaves: Changelog
 
+## Version 1.3.4 (2026-08-22)
+
+The fifteenth release of this plugin, the changes are as follows:
+- Version 2.2.6 of SKSE no longer fails to load newer versions of S.L.A.C.K., which allows S.L.A.C.K. to display a friendly version-mismatch message.
+- The messages for mismatched SKSE versions have been improved.
+- The name of S.L.A.C.K.'s INI file in the "SKSE64 DLL could not be found" error message has been updated to its new name.
+
+---
+
+The song recommendation for this release is [the first movement of the second act of Handel's "Acis and Galatea" as performed by Collegium Marianum under Jana Semerádová](https://www.youtube.com/watch?v=NVMMd3JpTlY&t=2470). (I had to follow up my recommendation of "i drink and drive" with something serious :), so go and listen to some Baroque opera!)
+
 ## Version 1.3.3 (2026-08-21)
 
 The fourteenth release of this plugin, the changes are as follows:
