@@ -72,6 +72,7 @@ try
 	$SourceBase = "$BuildRelativeSource"
 	$SourceFiles = $(
 		'game/package.d'
+		'game/offsets.d'
 		'skse64/dll_plugins.d'
 		'skse64/file_handling.d'
 		'skse64/serialisation.d'
