@@ -39,6 +39,8 @@ struct GlobalState
 	bool haveWarnedUserAboutNearlyReachingSaveFileSizeLimit;
 	bool haveSetUpSpecialSKSE64Providers;
 	bool anyPluginCosaveHandlerThrewAnException;
+	bool recoverableErrorsOccurred;
+	bool unrecoverableErrorsOccurred;
 	SpecialPlugin currentSpecialPluginBeingLoaded;
 	ubyte skseConsolePrintLock;
 

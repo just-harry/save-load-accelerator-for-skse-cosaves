@@ -5,11 +5,12 @@ module slack_mod.save_load;
 
 import core.atomic : atomicExchange, atomicFetchAdd, atomicLoad, atomicStore, MemoryOrder;
 
-import ldc.attributes : restrict;
+import ldc.attributes : optStrategy, restrict;
 import ldc.intrinsics : llvm_expect;
 import ldc.llvmasm : __ir_pure;
 
 import game;
+import game.offsets;
 
 import slack_common.algorithms;
 import slack_common.bindings;
@@ -647,8 +648,6 @@ bool savePluginData (bool parallel = false) (
 	pluginState.currentRecordHeader = unaligned(cast(Cosave.RecordHeader*) &currentPluginHeader[1]);
 	pluginState.recordCount = 0;
 
-	enum string consolePrint = parallel ? q{threadSafeSKSEConsolePrint} : q{global.addressOf.skseConsolePrint};
-
 	enum string setUpCall =
 	q{
 		SerialisationProvider.ProviderReceiver detaggedStateSaver = cast(SerialisationProvider.ProviderReceiver) (
@@ -678,23 +677,20 @@ bool savePluginData (bool parallel = false) (
 
 	enum string exceptionErrorMessages =
 	q{
-		static if (__traits(compiles, strings.filePath))
-		{
-			mixin(consolePrint)(
-				"S.L.A.C.K. | A SKSE plugin threw an exception whilst saving to the cosave. That plugin's data in the cosave may be corrupt. | Plugin data offset: %u | Plugin: %s [%s]",
-				pluginDataOffset,
-				strings.name,
-				strings.filePath
-			);
-		}
-		else
-		{
-			mixin(consolePrint)(
-				"S.L.A.C.K. | A SKSE plugin threw an exception whilst saving to the cosave. That plugin's data in the cosave may be corrupt. | Plugin data offset: %u | Plugin: %s",
-				pluginDataOffset,
-				strings.name
-			);
-		}
+		static if (parallel) acquireConsolePrintingLock;
+
+		logDetailsAfterCatchingException(
+			strings,
+			pluginDataOffset,
+			pluginState,
+			startOfPluginData,
+			pluginState.recordCount != 0 ? pluginState.currentRecordHeader : unaligned(&global.saveLoad.nullCosaveRecordHeader),
+			"A SKSE plugin threw or caused an exception whilst saving to the cosave. That plugin's data in the cosave may be corrupt.",
+			"Record count",
+			"written",
+		);
+
+		static if (parallel) releaseConsolePrintingLock;
 	};
 
 	mixin(setUpCall);
@@ -704,7 +700,13 @@ bool savePluginData (bool parallel = false) (
 
 	if ((global.configuration.flags & ConfigurationLongLived.Flags.profileSaving).llvm_expect(0))
 	{
-		static void profiledStateSaverCall (scope SerialisationProvider.ProviderReceiver pluginStateSaver, uint sparseIndex)
+		@optStrategy("minsize")
+		static void profiledStateSaverCall (
+			scope SerialisationProvider.ProviderReceiver pluginStateSaver,
+			uint sparseIndex,
+			scope const(SaveLoadPluginState)* pluginState,
+			scope const(ubyte)* startOfPluginData
+		)
 		{
 			pragma(inline, false);
 
@@ -730,6 +732,7 @@ bool savePluginData (bool parallel = false) (
 				static if (parallel)
 				{
 					global.anyPluginCosaveHandlerThrewAnException.atomicStore!(MemoryOrder.rel)(true);
+					global.unrecoverableErrorsOccurred.atomicStore!(MemoryOrder.rel)(true);
 
 					const(ubyte)* cosaveBufferPartition = global.saveLoad.parallel.cosaveBuffer.baseOf(threadIndex);
 					uint pluginDataOffset = cast(uint) (threadStack.pluginState.head - cosaveBufferPartition);
@@ -737,6 +740,7 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.anyPluginCosaveHandlerThrewAnException = true;
+					global.unrecoverableErrorsOccurred = true;
 
 					uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
 				}
@@ -789,7 +793,7 @@ bool savePluginData (bool parallel = false) (
 		}
 
 		/+ An exlined call to keep the branch short for when profiling is disabled. +/
-		profiledStateSaverCall(pluginStateSaver, sparseIndex);
+		profiledStateSaverCall(pluginStateSaver, sparseIndex, pluginState, startOfPluginData);
 	}
 	else
 	{
@@ -800,6 +804,7 @@ bool savePluginData (bool parallel = false) (
 			static if (parallel)
 			{
 				global.anyPluginCosaveHandlerThrewAnException.atomicStore!(MemoryOrder.rel)(true);
+				global.unrecoverableErrorsOccurred.atomicStore!(MemoryOrder.rel)(true);
 
 				const(ubyte)* cosaveBufferPartition = global.saveLoad.parallel.cosaveBuffer.baseOf(threadIndex);
 				uint pluginDataOffset = cast(uint) (pluginState.head - cosaveBufferPartition);
@@ -807,6 +812,7 @@ bool savePluginData (bool parallel = false) (
 			else
 			{
 				global.anyPluginCosaveHandlerThrewAnException = true;
+				global.unrecoverableErrorsOccurred = true;
 
 				uint pluginDataOffset = cast(uint) (pluginState.head - global.saveLoad.cosaveFileBuffer.base);
 			}
@@ -977,6 +983,8 @@ void saveCosaveSerial () nothrow @nogc
 
 	global.saveLoad.serial.pluginState.head = endOfData;
 	global.anyPluginCosaveHandlerThrewAnException = false;
+	global.unrecoverableErrorsOccurred = false;
+	global.recoverableErrorsOccurred = false;
 
 	std_vector!SerialisationStateForPlugin* dllPlugins = global.addressOf.cosaveAwarePlugins;
 
@@ -1017,10 +1025,17 @@ void saveCosaveSerial () nothrow @nogc
 		);
 	}
 
-	if (global.anyPluginCosaveHandlerThrewAnException)
-	{
-		global.addressOf.skseConsolePrint("S.L.A.C.K. | Errors occurred whilst saving the cosave! Please examine the previous lines of the console.");
-	}
+	errorNotificationEpilogue!(
+		"saving",
+		ConfigurationLongLived.Flags.showSavingErrorNotifications,
+		ConfigurationLongLived.Flags.showSavingWarningNotifications,
+		ConfigurationLongLived.SoundEffect.savingError,
+		ConfigurationLongLived.SoundEffect.savingWarning,
+	)(
+		global.anyPluginCosaveHandlerThrewAnException,
+		global.unrecoverableErrorsOccurred,
+		global.recoverableErrorsOccurred,
+	);
 }
 
 
@@ -1115,6 +1130,8 @@ void saveCosaveParallel () nothrow @nogc
 	uint retryCount = 0;
 retry:
 	global.anyPluginCosaveHandlerThrewAnException.atomicStore!(MemoryOrder.rel)(false);
+	global.unrecoverableErrorsOccurred.atomicStore!(MemoryOrder.rel)(false);
+	global.recoverableErrorsOccurred.atomicStore!(MemoryOrder.rel)(false);
 	global.saveLoad.parallel.cosaveFileHead.atomicStore!(MemoryOrder.rel)(endOfData);
 
 	ubyte threadCount = global.configuration.parallelSavingThreadCount;
@@ -1258,10 +1275,17 @@ waitingForSaveToFinish:
 		);
 	}
 
-	if (global.anyPluginCosaveHandlerThrewAnException.atomicLoad!(MemoryOrder.acq))
-	{
-		global.addressOf.skseConsolePrint("S.L.A.C.K. | Errors occurred whilst saving the cosave! Please examine the previous lines of the console.");
-	}
+	errorNotificationEpilogue!(
+		"saving",
+		ConfigurationLongLived.Flags.showSavingErrorNotifications,
+		ConfigurationLongLived.Flags.showSavingWarningNotifications,
+		ConfigurationLongLived.SoundEffect.savingError,
+		ConfigurationLongLived.SoundEffect.savingWarning,
+	)(
+		global.anyPluginCosaveHandlerThrewAnException.atomicLoad!(MemoryOrder.acq),
+		global.unrecoverableErrorsOccurred.atomicLoad!(MemoryOrder.acq),
+		global.recoverableErrorsOccurred.atomicLoad!(MemoryOrder.acq),
+	);
 }
 
 
@@ -1721,9 +1745,14 @@ void loadCosaveSerial () nothrow @nogc
 
 	ubyte* endOfData = base + cosaveFileSize;
 
+	global.anyPluginCosaveHandlerThrewAnException = false;
+	global.unrecoverableErrorsOccurred = false;
+	global.recoverableErrorsOccurred = false;
+
 	if (!verifyCosaveHeader(header))
 	{
 		global.addressOf.skseConsolePrint("S.L.A.C.K. | The cosave may be invalid, but we're loading it anyway.");
+		global.recoverableErrorsOccurred = true;
 	}
 
 	uint remainingPluginCount = header.pluginsWithDataInCosaveCount;
@@ -1738,7 +1767,6 @@ void loadCosaveSerial () nothrow @nogc
 		plugin.encounteredDataInLastLoadedSaveFile = false;
 	}
 
-	global.anyPluginCosaveHandlerThrewAnException = false;
 	bool firstPluginIsPending = true;
 
 	for (;;)
@@ -1842,27 +1870,21 @@ void loadCosaveSerial () nothrow @nogc
 
 			enum string exceptionErrorMessages =
 			q{
-				static if (__traits(compiles, strings.filePath))
-				{
-					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | A SKSE plugin threw an exception whilst loading from the cosave. That plugin's current state may be invalid. | Plugin data offset: %u | Plugin: %s [%s]",
-						pluginDataOffset,
-						strings.name,
-						strings.filePath
-					);
-				}
-				else
-				{
-					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | A SKSE plugin threw an exception whilst loading from the cosave. That plugin's current state may be invalid. | Plugin data offset: %u | Plugin: %s",
-						pluginDataOffset,
-						strings.name
-					);
-				}
+				logDetailsAfterCatchingException(
+					strings,
+					pluginDataOffset,
+					&global.saveLoad.serial.pluginState,
+					global.saveLoad.serial.pluginState.head,
+					global.saveLoad.serial.lastLoadedRecordHeader,
+					"A SKSE plugin threw or caused an exception whilst loading from the cosave. That plugin's current state may be invalid.",
+					"Remaining record count",
+					"read",
+				);
 			};
 
 			if ((global.configuration.flags & ConfigurationLongLived.Flags.profileLoading).llvm_expect(0))
 			{
+				@optStrategy("minsize")
 				static void profiledStateLoaderCall (scope const(SerialisationStateForPlugin)* plugin)
 				{
 					pragma(inline, false);
@@ -1882,6 +1904,7 @@ void loadCosaveSerial () nothrow @nogc
 					if (exceptionWasThrown.llvm_expect(false))
 					{
 						global.anyPluginCosaveHandlerThrewAnException = true;
+						global.unrecoverableErrorsOccurred = true;
 
 						uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
 
@@ -1917,6 +1940,7 @@ void loadCosaveSerial () nothrow @nogc
 				if (exceptionWasThrown.llvm_expect(false))
 				{
 					global.anyPluginCosaveHandlerThrewAnException = true;
+					global.unrecoverableErrorsOccurred = true;
 
 					uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
 
@@ -1992,10 +2016,17 @@ void loadCosaveSerial () nothrow @nogc
 		);
 	}
 
-	if (global.anyPluginCosaveHandlerThrewAnException)
-	{
-		global.addressOf.skseConsolePrint("S.L.A.C.K. | Errors occurred whilst loading the cosave! Please examine the previous lines of the console.");
-	}
+	errorNotificationEpilogue!(
+		"loading",
+		ConfigurationLongLived.Flags.showLoadingErrorNotifications,
+		ConfigurationLongLived.Flags.showLoadingWarningNotifications,
+		ConfigurationLongLived.SoundEffect.loadingError,
+		ConfigurationLongLived.SoundEffect.loadingWarning,
+	)(
+		global.anyPluginCosaveHandlerThrewAnException,
+		global.unrecoverableErrorsOccurred,
+		global.recoverableErrorsOccurred,
+	);
 }
 
 
@@ -2048,6 +2079,155 @@ version (SLACKVerificationMode)
 			endOfFile.sizeof,
 			FILE_INFORMATION_CLASS.FileEndOfFileInformation
 		);
+	}
+}
+
+
+@optStrategy("minsize")
+void logDetailsAfterCatchingException (
+	scope ref const(typeof(pluginStringsFromSerialisationStateIndex(0))) strings,
+	uint physicalOffset,
+	scope const(SaveLoadPluginState)* pluginState,
+	scope const(ubyte)* startOfPluginData,
+	scope const(Unaligned!(Cosave.RecordHeader))* recordHeader,
+	scope const(char)* description,
+	scope const(char)* recordCountLabel,
+	scope const(char)* recordVerbPastTense,
+) nothrow @nogc
+{
+	static if (__traits(compiles, strings.filePath))
+	{
+		global.addressOf.skseConsolePrint(
+			"S.L.A.C.K. | %s | Plugin: %s [%s]",
+			description,
+			strings.name,
+			strings.filePath,
+		);
+	}
+	else
+	{
+		global.addressOf.skseConsolePrint(
+			"S.L.A.C.K. | %s | Plugin: %s",
+			description,
+			strings.name,
+		);
+	}
+
+	uint offset = cast(uint) (pluginState.head - startOfPluginData);
+
+	if (recordHeader is unaligned(&global.saveLoad.nullCosaveRecordHeader))
+	{
+		global.addressOf.skseConsolePrint(
+			">>>>>>>> | `%s`'s cosave state | Physical offset: %u | Offset: %u | %s: 0",
+			strings.name,
+			physicalOffset,
+			offset,
+			recordCountLabel,
+		);
+	}
+	else
+	{
+		char[16] signatureText = void;
+		formatHeaderSignature(signatureText, recordHeader.signature);
+
+		global.addressOf.skseConsolePrint(
+			">>>>>>>> | `%s`'s cosave state | Physical offset: %u | Offset: %u | %s: %u | Last %s record: {type: %s, version: %u, size: %u}",
+			strings.name,
+			physicalOffset,
+			offset,
+			recordCountLabel,
+			pluginState.recordCount,
+			recordVerbPastTense,
+			signatureText.ptr,
+			recordHeader.schemaVersion,
+			cast(uint) (cast(size_t) pluginState.head - cast(size_t) recordHeader)
+		);
+	}
+}
+
+
+@optStrategy("minsize")
+void formatHeaderSignature (scope ref char[16] buffer, uint signature) @trusted pure nothrow @nogc
+{
+	if (
+		(
+			  (cast(ubyte) (signature >>> 24) > 31)
+			& (cast(ubyte) (signature >>> 16) > 31)
+			& (cast(ubyte) (signature >>>  8) > 31)
+			& (cast(ubyte) (signature >>>  0) > 31)
+		)
+		& (
+			  (cast(ubyte) (signature >>> 24) <= 126)
+			& (cast(ubyte) (signature >>> 16) <= 126)
+			& (cast(ubyte) (signature >>>  8) <= 126)
+			& (cast(ubyte) (signature >>>  0) <= 126)
+		)
+	)
+	{
+		/+ If all four bytes look like printable ASCII, show the signature as a FourCC literal. +/
+		buffer[0] = '\'';
+		*(cast(Unaligned!uint*) &buffer[1]) = endianSwap(signature);
+		buffer[5] = '\'';
+		buffer[6] = '\0';
+	}
+	else
+	{
+		buffer[0] = '0';
+		buffer[1] = 'x';
+		signature.asHexInto!true(buffer[2 .. 10]);
+		buffer[10] = '\0';
+	}
+}
+
+
+pragma(inline, true)
+void errorNotificationEpilogue (
+	string verbPresentTense,
+	ConfigurationLongLived.Flags errorFlag,
+	ConfigurationLongLived.Flags warningFlag,
+	ConfigurationLongLived.SoundEffect errorSoundEffect,
+	ConfigurationLongLived.SoundEffect warningSoundEffect,
+) (
+	bool anyPluginCosaveHandlerThrewAnException,
+	bool unrecoverableErrorsOccurred,
+	bool recoverableErrorsOccurred,
+)
+{
+	if (anyPluginCosaveHandlerThrewAnException)
+	{
+		enum string message = "S.L.A.C.K. | Errors occurred whilst " ~ verbPresentTense ~ " the cosave! Please examine the previous lines of the console.";
+		global.addressOf.skseConsolePrint(message);
+	}
+
+	if (!unrecoverableErrorsOccurred & !recoverableErrorsOccurred)
+	{
+		return;
+	}
+
+	static void showNotification (scope const(char)* message, ConfigurationLongLived.Flags flag, ConfigurationLongLived.SoundEffect soundEffect)
+	{
+		pragma(inline, false);
+
+		const(char)* soundEffectName = global.configuration.soundEffectName(soundEffect);
+		bool shouldShowNotification = (global.configuration.flags & flag) != 0;
+
+		if (shouldShowNotification | (*soundEffectName != '\0'))
+		{
+			(*based!showCornerMessage)(shouldShowNotification ? message : "", soundEffectName, false);
+		}
+	}
+
+	if (unrecoverableErrorsOccurred)
+	{
+		enum string message = "S.L.A.C.K. | Unrecoverable errors occurred whilst " ~ verbPresentTense ~ " the cosave! Please review the console.";
+		showNotification(message, errorFlag, errorSoundEffect);
+	}
+	else
+	{
+		assert(recoverableErrorsOccurred);
+
+		enum string message = "S.L.A.C.K. | Recoverable errors occurred whilst " ~ verbPresentTense ~ " the cosave! Please review the console.";
+		showNotification(message, warningFlag, warningSoundEffect);
 	}
 }
 

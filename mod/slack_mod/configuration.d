@@ -20,6 +20,8 @@ struct ConfigurationLongLived
 {
 	Flags flags;
 	ubyte parallelSavingThreadCount;
+	ubyte[SoundEffect.max + 1] soundEffectNameOffset;
+	char[256] soundEffectNameBuffer = 0;
 	wchar[] skseDLLName;
 	char[] skseDLLNameUTF8;
 	wchar[256] skseDLLNameBuffer = 0;
@@ -37,6 +39,18 @@ struct ConfigurationLongLived
 		profileSaving = 1 << 7,
 		profileLoading = 1 << 8,
 		errorFriendlyMode = 1 << 9,
+		showSavingErrorNotifications = 1 << 10,
+		showLoadingErrorNotifications = 1 << 11,
+		showSavingWarningNotifications = 1 << 12,
+		showLoadingWarningNotifications = 1 << 13,
+	}
+
+	enum SoundEffect : ubyte
+	{
+		savingError = 0,
+		loadingError = 1,
+		savingWarning = 2,
+		loadingWarning = 3,
 	}
 
 	void setToDefault () scope @safe pure nothrow @nogc
@@ -48,6 +62,10 @@ struct ConfigurationLongLived
 			| Flags.logLoadTimingsToConsole
 			| Flags.workAroundThirdPartyBugs
 			| Flags.errorFriendlyMode
+			| Flags.showSavingErrorNotifications
+			| Flags.showLoadingErrorNotifications
+			| Flags.showSavingWarningNotifications
+			| Flags.showLoadingWarningNotifications
 		);
 
 		this.parallelSavingThreadCount = 0;
@@ -77,6 +95,12 @@ struct ConfigurationLongLived
 		return this.accelerationEnabled | this.timingLoggingEnabled;
 	}
 
+	pragma(inline, true)
+	inout(char)* soundEffectName (SoundEffect soundEffect) inout return scope @trusted pure nothrow @nogc
+	{
+		return this.soundEffectNameBuffer.ptr + this.soundEffectNameOffset[soundEffect];
+	}
+
 	ubyte adjustThreadCounts (ubyte defaultThreadCount) scope @trusted pure nothrow @nogc
 	{
 		this.parallelSavingThreadCount = this.parallelSavingThreadCount == 0 ? defaultThreadCount : this.parallelSavingThreadCount;
@@ -94,16 +118,51 @@ struct ConfigurationLongLived
 			cast(ubyte) lesserOf(GetActiveProcessorCount(ALL_PROCESSOR_GROUPS), 16)
 		);
 	}
+
+	pragma(inline, true)
+	bool setSoundEffectNames (scope ref const(char[])[SoundEffect.max + 1] soundEffect) scope @trusted pure nothrow @nogc
+	{
+		uint offset = 0;
+		uint spaceLeft = this.soundEffectNameBuffer.length;
+
+		foreach (index, ref name; soundEffect)
+		{
+			if (name.length + 1 > spaceLeft)
+			{
+				return false;
+			}
+
+			blit(this.soundEffectNameBuffer.ptr + offset, name.ptr, name.length);
+			*(this.soundEffectNameBuffer.ptr + offset + name.length) = '\0';
+
+			offset += name.length + 1;
+			spaceLeft -= name.length + 1;
+		}
+
+		return true;
+	}
 }
 
 
 struct ConfigurationTransient
 {
-	const(char)[] skseDLLName;
+	alias SoundEffect = ConfigurationLongLived.SoundEffect;
 
-	void setToDefault () scope @safe pure nothrow @nogc
+	const(char)[] skseDLLName;
+	const(char)[][SoundEffect.max + 1] soundEffects;
+
+	void setToDefault () scope @trusted pure nothrow @nogc
 	{
 		this.skseDLLName = null;
+		this.setSoundEffectsToDefault;
+	}
+
+	void setSoundEffectsToDefault () scope @trusted pure nothrow @nogc
+	{
+		this.soundEffects[SoundEffect.savingError] = "UILockpickingPickBreak";
+		this.soundEffects[SoundEffect.loadingError] = "UILockpickingPickBreak";
+		this.soundEffects[SoundEffect.savingWarning] = "UIMenuCancel";
+		this.soundEffects[SoundEffect.loadingWarning] = "UIMenuCancel";
 	}
 }
 
@@ -180,6 +239,7 @@ void parseINIConfiguration (
 		}
 	}`;
 
+	alias Sound = ConfigurationLongLived.SoundEffect;
 	alias F = ConfigurationLongLived.Flags;
 
 	@optStrategy("minsize")
@@ -215,6 +275,19 @@ void parseINIConfiguration (
 		mixin(flag!("workaroundthirdpartybugs", q{F.workAroundThirdPartyBugs}, q{true}));
 	};
 
+	/+ [Notifications] +/
+	scope notificationsSectionHandler = (scope const(INIAssignment!(const(char)))* a) @trusted
+	{
+		mixin(flag!("showsavingerrornotifications", q{F.showSavingErrorNotifications}, q{true}));
+		mixin(flag!("showloadingerrornotifications", q{F.showLoadingErrorNotifications}, q{true}));
+		mixin(flag!("showsavingwarningnotifications", q{F.showSavingWarningNotifications}, q{true}));
+		mixin(flag!("showloadingwarningnotifications", q{F.showLoadingWarningNotifications}, q{true}));
+		mixin(iniKey!("savingerrorsound", q{transient.soundEffects[Sound.savingError] = a.value;}));
+		mixin(iniKey!("loadingerrorsound", q{transient.soundEffects[Sound.loadingError] = a.value;}));
+		mixin(iniKey!("savingwarningsound", q{transient.soundEffects[Sound.savingWarning] = a.value;}));
+		mixin(iniKey!("loadingwarningsound", q{transient.soundEffects[Sound.loadingWarning] = a.value;}));
+	};
+
 	/+ [Profiling] +/
 	scope profilingSectionHandler = (scope const(INIAssignment!(const(char)))* a) @trusted
 	{
@@ -244,6 +317,7 @@ void parseINIConfiguration (
 			mixin(iniSection!("skse", q{skseSectionHandler}));
 			mixin(iniSection!("settings", q{settingsSectionHandler}));
 			mixin(iniSection!("profiling", q{profilingSectionHandler}));
+			mixin(iniSection!("notifications", q{notificationsSectionHandler}));
 			mixin(iniSection!("parallelsaving", q{parallelSavingHandler}));
 
 			return skipINISection;

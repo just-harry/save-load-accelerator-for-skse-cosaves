@@ -246,6 +246,15 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 			}
 
 			parseINIConfiguration(cast(const(char)[]) ini, &global.configuration, &transientConfiguration);
+		setSoundEffectNames:
+			if (!global.configuration.setSoundEffectNames(transientConfiguration.soundEffects))
+			{
+				reportErrorToUser(
+					"The sound effect names in the [Notifications] section of the \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini\" file have a total length that is too long."
+				);
+				transientConfiguration.setSoundEffectsToDefault;
+				goto setSoundEffectNames;
+			}
 
 			if (transientConfiguration.skseDLLName.length != 0)
 			{
@@ -558,6 +567,9 @@ allocatedSKSEskseAdjacentMemory:
 	}
 
 	global.anyPluginCosaveHandlerThrewAnException = false;
+	global.recoverableErrorsOccurred = false;
+	global.unrecoverableErrorsOccurred = false;
+
 	allowPluginsToSaveWhenSKSEIsNotSaving;
 	allowPluginsToLoadWhenSKSEIsNotLoading;
 
