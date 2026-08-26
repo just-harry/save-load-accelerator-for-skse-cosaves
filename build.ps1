@@ -227,6 +227,7 @@ try
 			-lto-embed-bitcode=optimized `
 			--output-bc `
 			$Optimisation `
+			-vectorize-loops `
 			$(if ($Unittest) {$DLL.LinkerArguments.ForEach{'-L', $_}}) `
 			$Variant.Files `
 			$DLL.Files `
