@@ -37,6 +37,7 @@ struct std_vector (T)
 {
 	T* base;
 	T* tail;
+	T* space;
 
 	alias asSlice this;
 
@@ -50,6 +51,12 @@ struct std_vector (T)
 	size_t size () const @property scope @safe pure nothrow @nogc
 	{
 		return this.tail - this.base;
+	}
+
+	pragma(inline, true)
+	size_t capacity () const @property scope @safe pure nothrow @nogc
+	{
+		return this.space - this.base;
 	}
 }
 
