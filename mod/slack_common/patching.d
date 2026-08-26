@@ -3,6 +3,8 @@
 
 module slack_common.patching;
 
+import ldc.attributes : optStrategy;
+
 import slack_common.bindings;
 import slack_common.memory;
 import slack_common.text;
@@ -378,6 +380,7 @@ void withCodeRegionMadeWritable () (
 }
 
 
+@optStrategy("minsize")
 private void _withMemoryRegionMadeWritable (Action) (
 	scope ubyte* memory,
 	size_t length,
@@ -430,6 +433,7 @@ private void _withMemoryRegionMadeWritable (Action) (
 }
 
 
+@optStrategy("minsize")
 void makeMemoryRegionExecutable (scope ubyte* memory, size_t length) nothrow @nogc
 {
 	void* pageBase = memory;

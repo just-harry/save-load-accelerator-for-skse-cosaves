@@ -3,6 +3,8 @@
 
 module slack_mod.configuration;
 
+import ldc.attributes : optStrategy;
+
 import slack_common.algorithms;
 import slack_common.bindings;
 import slack_common.ini;
@@ -143,6 +145,7 @@ iniPathFromDot:
 }
 
 
+@optStrategy("minsize")
 void parseINIConfiguration (
 	scope const(char)[] ini,
 	scope ConfigurationLongLived* configuration,

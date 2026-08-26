@@ -3,6 +3,8 @@
 
 module slack_common.text;
 
+import ldc.attributes : optStrategy;
+
 import slack_common.algorithms;
 import slack_common.integers;
 import slack_common.memory;
@@ -55,6 +57,7 @@ void asHexInto (bool uppercase, Char = char, Value) (Value value, scope ref Char
 }
 
 
+@optStrategy("minsize")
 void asHexInto (Char = char, bool uppercase = false, Value) (Value value, scope ref Char[Value.sizeof * 2] hex)
 {
 	enum uint letterNibble = 10;

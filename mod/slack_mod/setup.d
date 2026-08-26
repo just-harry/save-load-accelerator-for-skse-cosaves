@@ -3,6 +3,7 @@
 
 module slack_mod.setup;
 
+import ldc.attributes : optStrategy;
 import ldc.llvmasm : __ir_pure;
 
 import game;
@@ -36,6 +37,8 @@ import skse64.hacks.versioning;
 import skse64.hacks.offsets;
 
 
+@optStrategy("minsize")
+pragma(inline, false)
 bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 {
 	alias Config = ConfigurationLongLived.Flags;
@@ -223,6 +226,7 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 }
 
 
+@optStrategy("minsize")
 bool setUpEverythingWithSKSEDLL (scope ref wchar[512] stringBuffer, scope ubyte* skseDLL) nothrow @nogc
 {
 	alias Config = ConfigurationLongLived.Flags;
@@ -799,6 +803,7 @@ static if (observingPluginFileNameViaCall)
 }
 
 
+@optStrategy("minsize")
 pragma(inline, false)
 void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (ulong rcx, ulong rdx) nothrow @nogc
 {

@@ -3,6 +3,8 @@
 
 module slack_common.memory;
 
+import ldc.attributes : optStrategy;
+
 import slack_common.bindings;
 import slack_common.byte_sizes;
 import slack_common.dynamically_linked;
@@ -108,6 +110,7 @@ uint allocateVirtualMemoryWithinRange (
 }
 
 
+@optStrategy("minsize")
 private uint allocateVirtualMemoryWithinRange (
 	scope const(void)* tail,
 	void** address,
