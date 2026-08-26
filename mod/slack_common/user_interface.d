@@ -11,16 +11,19 @@ import slack_common.text;
 import slack_common.threading;
 
 
-enum immutable(wchar[]) errorDialogTitle = "Save & Load Accelerator for SKSE Cosaves v1.3.4 Error";
+enum immutable(Char[]) errorDialogTitle (Char) = "Save & Load Accelerator for SKSE Cosaves v1.3.4 Error";
+
+
+alias messageBox (Char) = mixin(Char.sizeof == 2 ? q{MessageBoxW} : q{MessageBoxA});
 
 
 /+ The implementation for Skyrim v1.5.97 breaks message-boxes in other versions of Skyrim.
    https://www.youtube.com/watch?v=FL0PvTmo5CE&t=7s +/
 static if (targetedGameArchetype != GameArchetype.se)
 {
-	uint showMessageBox (scope const(wchar)* message, scope const(wchar)* title, uint flags = 0) nothrow @nogc
+	uint showMessageBox (Char) (scope const(Char)* message, scope const(Char)* title, uint flags = 0) nothrow @nogc
 	{
-		return MessageBoxW(
+		return messageBox!Char(
 			null,
 			message,
 			title,
@@ -29,12 +32,12 @@ static if (targetedGameArchetype != GameArchetype.se)
 	}
 
 
-	void reportErrorToUser (scope const(wchar)* message, uint flags = MB_ICONERROR) nothrow @nogc
+	void reportErrorToUser (Char) (scope const(Char)* message, uint flags = MB_ICONERROR) nothrow @nogc
 	{
-		MessageBoxW(
+		messageBox!Char(
 			null,
 			message,
-			errorDialogTitle.ptr,
+			errorDialogTitle!Char.ptr,
 			MB_OK | MB_TOPMOST | flags
 		);
 	}
@@ -44,15 +47,15 @@ else
 	import slack_common.threading;
 
 
-	uint showMessageBox (scope const(wchar)* message, scope const(wchar)* title, uint flags = 0) nothrow @nogc
+	uint showMessageBox (Char) (scope const(Char)* message, scope const(Char)* title, uint flags = 0) nothrow @nogc
 	{
-		/+ In v1.5.97 of Skyrim, the body of the message-box is sometimes blank when MessageBoxW
+		/+ In v1.5.97 of Skyrim, the body of the message-box is sometimes blank when MessageBoxW/A
 		   is called from the main-thread, hence why we spin up a new thread. +/
 
 		static struct Context
 		{
-			const(wchar)* message;
-			const(wchar)* title;
+			const(Char)* message;
+			const(Char)* title;
 
 			union
 			{
@@ -64,7 +67,7 @@ else
 		extern(Windows)
 		static uint showMessage (scope void* context)
 		{
-			(cast(Context*) context).result = MessageBoxW(
+			(cast(Context*) context).result = messageBox!Char(
 				null,
 				(cast(const(Context*)) context).message,
 				(cast(const(Context*)) context).title,
@@ -94,10 +97,21 @@ else
 	}
 
 
-	void reportErrorToUser (scope const(wchar)* message, uint flags = MB_ICONERROR) nothrow @nogc
+	void reportErrorToUser (Char) (scope const(Char)* message, uint flags = MB_ICONERROR) nothrow @nogc
 	{
-		showMessageBox(message, errorDialogTitle.ptr, flags);
+		showMessageBox(message, errorDialogTitle!Char.ptr, flags);
 	}
+}
+
+
+uint showMessageBox (scope const(wchar)* message, scope const(wchar)* title, uint flags = 0) nothrow @nogc
+{
+	return showMessageBox!wchar(message, title, flags);
+}
+
+void reportErrorToUser (scope const(wchar)* message, uint flags = MB_ICONERROR) nothrow @nogc
+{
+	reportErrorToUser!wchar(message, flags);
 }
 
 

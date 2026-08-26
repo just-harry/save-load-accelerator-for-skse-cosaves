@@ -93,7 +93,7 @@ static if (expectedSKSE64Version >= 0x02_02_007_0)
 				static immutable(wchar[203]) message = "Version 2.2.6 of SKSE has been detected. This version of SKSE is out-of-date and is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\nPlease update to version 2.2.8 of SKSE.\0";
 				enum wstring url = "https://www.nexusmods.com/skyrimspecialedition/mods/30379?tab=files#file-expander-header-792256:~:text=Skyrim%20Script%20Extender%20%28SKSE64%29%20Steam,2%2E2%2E8";
 
-				uint button = showMessageBox(message.ptr, errorDialogTitle.ptr, MB_OKCANCEL | MB_ICONHAND);
+				uint button = showMessageBox(message.ptr, errorDialogTitle!wchar.ptr, MB_OKCANCEL | MB_ICONHAND);
 
 				if (button == IDOK)
 				{
