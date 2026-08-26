@@ -495,8 +495,6 @@ void allowPluginsToSaveWhenSKSEIsNotSaving () ()
 	/+ Some SKSE plugins mistakenly call SKSE's saving routines when SKSE is not saving.
 	   So to try and avert disaster when that happens, we'll put up some of the serial-saving state. +/
 
-	global.anyPluginCosaveHandlerThrewAnException = false;
-
 	ubyte* base = global.saveLoad.cosaveFileBuffer.base;
 	ubyte* endOfData = base + Cosave.Header.sizeof;
 
@@ -516,8 +514,6 @@ void allowPluginsToLoadWhenSKSEIsNotLoading () ()
 {
 	/+ Similarly, some SKSE plugins mistakenly call SKSE's loading routines when SKSE is not loading.
 	   So to try and avert disaster when that happens, we'll put up some of the serial-loading state. +/
-
-	global.anyPluginCosaveHandlerThrewAnException = false;
 
 	global.saveLoad.serial.pluginState.head = global.saveLoad.cosaveFileBuffer.base + Cosave.Header.sizeof;
 	global.saveLoad.serial.pluginState.tail = global.saveLoad.serial.pluginState.head;

@@ -557,6 +557,7 @@ allocatedSKSEskseAdjacentMemory:
 		}
 	}
 
+	global.anyPluginCosaveHandlerThrewAnException = false;
 	allowPluginsToSaveWhenSKSEIsNotSaving;
 	allowPluginsToLoadWhenSKSEIsNotLoading;
 
