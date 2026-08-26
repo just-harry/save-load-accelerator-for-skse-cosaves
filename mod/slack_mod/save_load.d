@@ -753,7 +753,7 @@ bool savePluginData (bool parallel = false) (
 				static if (parallel)
 				{
 					threadSafeSKSEConsolePrint(
-						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %7.3f ms | Plugin: %s [%s]",
+						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Plugin: %s [%s]",
 						threadIndex,
 						duration,
 						strings.name,
@@ -763,7 +763,7 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | Plugin save callback: %7.3f ms | Plugin: %s [%s]",
+						"S.L.A.C.K. | Plugin save callback: %10.3f ms | Plugin: %s [%s]",
 						duration,
 						strings.name,
 						strings.filePath
@@ -775,7 +775,7 @@ bool savePluginData (bool parallel = false) (
 				static if (parallel)
 				{
 					threadSafeSKSEConsolePrint(
-						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %7.3f ms | Plugin: %s",
+						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Plugin: %s",
 						threadIndex,
 						duration,
 						strings.name
@@ -784,7 +784,7 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | Plugin save callback: %7.3f ms | Plugin: %s",
+						"S.L.A.C.K. | Plugin save callback: %10.3f ms | Plugin: %s",
 						duration,
 						strings.name
 					);
@@ -1914,7 +1914,7 @@ void loadCosaveSerial () nothrow @nogc
 					static if (__traits(compiles, strings.filePath))
 					{
 						global.addressOf.skseConsolePrint(
-							"S.L.A.C.K. | Plugin load callback: %7.3f ms | Plugin: %s [%s]",
+							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Plugin: %s [%s]",
 							duration,
 							strings.name,
 							strings.filePath
@@ -1923,7 +1923,7 @@ void loadCosaveSerial () nothrow @nogc
 					else
 					{
 						global.addressOf.skseConsolePrint(
-							"S.L.A.C.K. | Plugin load callback: %7.3f ms | Plugin: %s",
+							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Plugin: %s",
 							duration,
 							strings.name
 						);
