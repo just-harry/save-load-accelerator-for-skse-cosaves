@@ -12,6 +12,7 @@ import slack_common.algorithms;
 import slack_common.bindings;
 import slack_common.byte_sizes;
 import slack_common.cpp;
+import slack_common.dynamic_linking;
 import slack_common.file_handling;
 import slack_common.ini;
 import slack_common.integers;
@@ -48,6 +49,130 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 	global.performanceFrequencyMillisecondMultiplier = 1000.0 / cast(double) global.performanceFrequency;
 
 	global.linked.linkAll;
+
+	static if (expectedSKSE64Version >= 0x02_02_007_0)
+	{
+		/+ With the release of version 2.2.7, SKSE acquired a preloader,
+		   and this preloader preloads plugins before Engine Fixes' preloader preloads plugins.
+		   Thus, S.L.A.C.K. was migrated over to using SKSE's preloader:
+		   this required S.L.A.C.K.'s DLL to be moved from `Data/DLLPlugins`
+		   to `Data/SKSE/Plugins`; unfortunately, this means older versions of S.L.A.C.K.
+		   can be present at the same time as newer versions.
+
+		   To avoid this state of things confusing users, we detect the presence
+		   of `Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll` accordingly.
+
+		   However, our woes don't end there!
+		   There was at one point a short-lived, hostile fork of S.L.A.C.K..
+		   (hostile, as in: the fork will be deleted IFF upstream mainlines the fork's changes.)
+		   That fork used the exact same DLL name and error-message-dialog title as S.L.A.C.K.,
+		   and so to an end-user it appears no different to S.L.A.C.K. proper.
+		   But the fork did end up using a different name for the mod itself,
+		   so it's not outside the realm of possibility (read: this has already happened)
+		   for a user to forget that they have the fork installed and enabled.
+
+		   The fork was released with two different version-numbers: v1.4.0; and v1.5.0,
+		   during a period where S.L.A.C.K. held steadfast on v1.3.2.
+
+		   So, to detect the fork we inspect the version-info of the DLL file.
+		   If the file-version is 1.4.0.0-or-greater, and the legal-copyright field
+		   is 71-code-units long (including the null-terminator),
+		   and the copyright year is 2025 followed by a space, then the DLL is of the fork.
+
+		   Starting with v1.4.0 of S.L.A.C.K. proper, the copyright year is now a range
+		   allowing for the fork and the original to be distinguished via version-info alone.
+
+		   https://www.youtube.com/watch?v=FL0PvTmo5CE&t=7s +/
+
+
+		uint exePathLength = void;
+
+		if ((exePathLength = GetModuleFileNameW(null, stringBuffer.ptr, MAX_PATH)) != 0)
+		{
+			wchar* end = stringBuffer.ptr + exePathLength;
+
+			for (; end > stringBuffer.ptr;)
+			{
+				--end;
+				if (*end == '\\') break;
+			}
+
+			size_t spaceLeft = MAX_PATH - (end - stringBuffer.ptr);
+
+			if (spaceLeft >= 55)
+			{
+				blit(end + 1, `Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll`w.ptr, 55);
+
+				uint attributes = GetFileAttributesW(stringBuffer.ptr);
+
+				if ((attributes != INVALID_FILE_ATTRIBUTES) & ((attributes & FILE_ATTRIBUTE_DIRECTORY) == 0))
+				{
+					enum string usualMessage = (
+						  "An older version of S.L.A.C.K. is present in the \"Data\\DLLPlugins\" folder, this will cause a version-mismatch error.\r\n\r\n"
+						~ "You should remove or disable the older version of S.L.A.C.K..\r\n\r\n"
+						~ "If you use Mod Organizer 2, reinstall S.L.A.C.K. and use the \"Replace\" option when prompted to."
+					);
+
+					immutable(char)* message = usualMessage;
+
+					HMODULE versionDLL = LoadLibraryW("version.dll");
+
+					/+ This whole nest of if-statements is gross, but whatever. +/
+					if (versionDLL != null)
+					{
+						scope(exit) FreeLibrary(versionDLL);
+
+						alias GetFileVersionInfoW = extern(Windows) BOOL function (scope const(wchar)* lptstrFilename, uint dwHandle, uint dwLen, scope void* lpData) nothrow @nogc;
+						alias VerQueryValueW = extern(Windows) BOOL function (scope const(void)* pBlock, scope const(wchar)* lpSubBlock, scope void** lplpBuffer, scope uint* puLen) nothrow @nogc;
+						auto getFileVersionInfoW = mixin(dynamicallyLink!(q{versionDLL}, q{GetFileVersionInfoW}));
+						auto verQueryValueW = mixin(dynamicallyLink!(q{versionDLL}, q{VerQueryValueW}));
+
+						if ((getFileVersionInfoW != null) & (verQueryValueW != null))
+						{
+							ubyte[2048] versionInfo = void;
+							uint ignored = void;
+
+							if (getFileVersionInfoW(stringBuffer.ptr, ignored, versionInfo.length, versionInfo.ptr))
+							{
+								void* value = void;
+								uint valueSize = void;
+
+								if (verQueryValueW(versionInfo.ptr, `\`, &value, &valueSize))
+								{
+									if ((cast(const(VS_FIXEDFILEINFO)*) value).dwFileVersionMS >= 0x0001_0004)
+									{
+										if (verQueryValueW(versionInfo.ptr, `\StringFileInfo\080904b0\LegalCopyright`, &value, &valueSize))
+										{
+											if (valueSize == 71)
+											{
+												const(wchar)* c = cast(const(wchar)*) value;
+
+												if ((c[14] == '2') & (c[15] == '0') & (c[16] == '2') & (c[17] == '5'))
+												{
+													if (c[18] == ' ')
+													{
+														enum string ughMessage = (
+															  "An unofficial fork of S.L.A.C.K. is present in the \"Data\\DLLPlugins\" folder, this will cause a version-mismatch error.\r\n\r\n"
+															~ "This fork has gone by the names \"Faster Loadin' 'n' Savin'\", and \"Save and Load Accelerator for SKSE Cosaves - S.L.A.C.K. (Continued)\".\r\n\r\n"
+															~ "You should disable the fork in your mod manager."
+														);
+
+														message = ughMessage;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+
+					reportErrorToUser(message);
+				}
+			}
+		}
+	}
 
 	uint error = void;
 	const(wchar)[] errorMessage = void;
