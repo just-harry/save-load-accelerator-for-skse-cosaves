@@ -29,10 +29,6 @@ version (Windows)
 		return export_;
 	}
 
-	pragma(inline, true)
-	T dynamicallyLink (T) (scope HMODULE dll)
-	{
-		return dynamicallyLinkAs!T(dll, __traits(identifier, T));
-	}
+	enum string dynamicallyLink (string dll, string name) = `(` ~ dll ~ `).dynamicallyLinkAs!` ~ name ~ `("` ~ name ~ `")`;
 }
 
