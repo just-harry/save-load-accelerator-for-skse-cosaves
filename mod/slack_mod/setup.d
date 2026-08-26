@@ -68,7 +68,7 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 	{
 		reportErrorToUser(
 			stringBuffer,
-			"The path of the \"Save&LoadAcceleratorForSKSECosaves.dll\" file could not be found.\r\nAnd thus nor can the INI file be found.",
+			"The path of the \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll\" file could not be found.\r\nAnd thus nor can the INI file be found.",
 			hresultFromLastError(getLastError)
 		);
 	noINIFile:
@@ -96,7 +96,7 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 			{
 				reportErrorToUser(
 					stringBuffer,
-					"The \"Save&LoadAcceleratorForSKSECosaves.ini\" file could not be opened.",
+					"The \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini\" file could not be opened.",
 					hresultFromLastError(error)
 				);
 			}
@@ -113,7 +113,7 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 			{
 				reportErrorToUser(
 					stringBuffer,
-					"The \"Save&LoadAcceleratorForSKSECosaves.ini\" file could not be mapped for reading.",
+					"The \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini\" file could not be mapped for reading.",
 					error
 				);
 
@@ -134,7 +134,7 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 				if (utf8 < utf8End)
 				{
 					reportErrorToUser(
-						"The \"SKSEDLLName\" value provided in \"Save&LoadAcceleratorForSKSECosaves.ini\" is too long."
+						"The \"SKSEDLLName\" value provided in \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini\" is too long."
 					);
 
 					goto defaultSKSEDLLName;

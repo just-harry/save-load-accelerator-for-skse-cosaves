@@ -118,7 +118,7 @@ wchar* findConfigurationFilePath (return scope ref wchar[512] stringBuffer, HMOD
 	{
 		reportErrorToUser(
 			stringBuffer,
-			"The path of the \"Save&LoadAcceleratorForSKSECosaves.dll\" file could not be found.",
+			"The path of the \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll\" file could not be found.",
 			hresultFromLastError(getLastError)
 		);
 		return null;
@@ -133,8 +133,8 @@ wchar* findConfigurationFilePath (return scope ref wchar[512] stringBuffer, HMOD
 		if (*end == '\\') goto initPathFromSlash;
 	}
 initPathFromSlash:
-	blit(++end, "Save&LoadAcceleratorForSKSECosaves.ini"w.ptr, 39);
-	end += 38;
+	blit(++end, "!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini"w.ptr, 49);
+	end += 48;
 	return end;
 iniPathFromDot:
 	*++end = 'i';
