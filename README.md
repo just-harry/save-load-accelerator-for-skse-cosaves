@@ -18,6 +18,8 @@ This is a plugin for [SKSE64](https://skse.silverlock.org/) that aims to improve
 In an environment for targeting x86-64 Windows, run the `build.ps1` script found in the root of this repository.
 The resulting DLLs will be available in the `build/release` directory.
 
+If you have a code-signing certificate at hand, the `sign.ps1` script can be used to sign the built DLLs before they are packaged.
+
 To package the built DLLs into archives suitable for installation, run the `package.ps1` script found in the root of this repository.
 The resulting archives will be available in the `package/release` directory.
 
