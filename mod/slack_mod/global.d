@@ -249,16 +249,11 @@ int vectoredExceptionHandler () (scope EXCEPTION_POINTERS* exceptionInfo) @syste
 
 
 pragma(inline, true)
-void threadSafeSKSEConsolePrint (Args...) (scope const(char)* format, scope auto ref Args arguments)
+void acquireConsolePrintingLock () ()
 {
 acquireLock:
 	if ((&global.skseConsolePrintLock).atomicExchange!(MemoryOrder.acq_rel)(ubyte(1)) == 0)
-	{
-		global.addressOf.skseConsolePrint(format, arguments);
-
-		global.skseConsolePrintLock.atomicStore!(MemoryOrder.rel)(ubyte(0));
-		wakeAllThreadsVia(&global.skseConsolePrintLock);
-	}
+	{}
 	else
 	{
 	wait:
@@ -272,5 +267,22 @@ acquireLock:
 
 		goto acquireLock;
 	}
+}
+
+
+pragma(inline, true)
+void releaseConsolePrintingLock () ()
+{
+	global.skseConsolePrintLock.atomicStore!(MemoryOrder.rel)(ubyte(0));
+	wakeAllThreadsVia(&global.skseConsolePrintLock);
+}
+
+
+pragma(inline, true)
+void threadSafeSKSEConsolePrint (Args...) (scope const(char)* format, scope auto ref Args arguments)
+{
+	acquireConsolePrintingLock;
+	scope(exit) releaseConsolePrintingLock;
+	global.addressOf.skseConsolePrint(format, arguments);
 }
 
