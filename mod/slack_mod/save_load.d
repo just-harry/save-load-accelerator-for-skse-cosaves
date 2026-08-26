@@ -540,7 +540,14 @@ DLLPluginIndex dllPluginIndex () (scope const(SerialisationStateForPlugin)* plug
 
 pragma(inline, true)
 DLLPlugin* dllPlugin () (DLLPluginIndex pluginIndex) nothrow @nogc
-in (pluginIndex < global.addressOf.loadedSKSEPlugins.size)
+in (
+	   pluginIndex < global.addressOf.loadedSKSEPlugins.size
+	/+ As a micro-optimisation in `pluginStringsFromSerialisationStateIndex`
+	   we calculate the address of the `DLLPlugin*` unconditionally,
+	   and branch on whether or not the sparse-index is 0 afterwards;
+	   we'll concede that special-case in this precondition to keep debug builds useful. +/
+	|| pluginIndex == -1
+)
 {
 	return global.addressOf.loadedSKSEPlugins.base + pluginIndex;
 }
