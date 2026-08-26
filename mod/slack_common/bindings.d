@@ -42,7 +42,9 @@ version (Windows)
 	extern(Windows) NTSTATUS LdrGetDllHandle (scope const(wchar)* DllPath, scope uint* DllCharacteristics, scope const(UNICODE_STRING)* DllName, scope HMODULE* DllHandle) nothrow @nogc;
 
 
+	extern(Windows) HMODULE LoadLibraryW (scope const(wchar)* lpLibFileName) nothrow @nogc;
 	extern(Windows) HMODULE LoadLibraryExW (scope const(wchar)* lpLibFileName, scope HANDLE hFile, uint dwFlags) nothrow @nogc;
+	extern(Windows) BOOL FreeLibrary (scope HMODULE hLibModule) nothrow @nogc;
 	extern(Windows) NTSTATUS LdrLoadDll (scope const(wchar)* DllPath, scope uint* DllCharacteristics, scope const(UNICODE_STRING)* DllName, scope HMODULE* DllHandle) nothrow @nogc;
 	extern(Windows) NTSTATUS LdrUnloadDll (scope HMODULE DllHandle) nothrow @nogc;
 
@@ -94,7 +96,10 @@ version (Windows)
 	extern(Windows) NTSTATUS NtReadFile (HANDLE FileHandle, HANDLE Event, PIO_APC_ROUTINE ApcRoutine, void* ApcContext, IO_STATUS_BLOCK* IoStatusBlock, void* Buffer, uint Length, scope const(LARGE_INTEGER)* ByteOffset, scope const(uint)* Key) nothrow @nogc;
 
 
-	extern(Windows) NTSTATUS NtQueryInformationFile (scope HANDLE FileHandle, scope IO_STATUS_BLOCK* IoStatusBlock, scope void* FileInformation, uint Length, FILE_INFORMATION_CLASS FileInformationClass) nothrow @nogc;
+	extern(Windows) uint GetFileAttributesA (scope const(char)* lpFileName) nothrow @nogc;
+	extern(Windows) uint GetFileAttributesW (scope const(wchar)* lpFileName) nothrow @nogc;
+
+
 	extern(Windows) NTSTATUS NtSetInformationFile (scope HANDLE FileHandle, scope IO_STATUS_BLOCK* IoStatusBlock, scope void* FileInformation, uint Length, FILE_INFORMATION_CLASS FileInformationClass) nothrow @nogc;
 
 
