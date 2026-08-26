@@ -5,7 +5,7 @@ module slack_mod.save_load;
 
 import core.atomic : atomicExchange, atomicFetchAdd, atomicLoad, atomicStore, MemoryOrder;
 
-import ldc.attributes : optStrategy, restrict;
+import ldc.attributes : assumeUsed, optStrategy, restrict;
 import ldc.intrinsics : llvm_expect;
 import ldc.llvmasm : __ir_pure;
 
@@ -1353,7 +1353,9 @@ version (SLACKVerificationMode)
 }
 
 
-
+/+ `assumeUsed` is required for LDC (before v1.43.0) to emit this function when using LTO.
+    (Naked DMD-style assembly doesn't play nicely with LTO.) +/
+@assumeUsed
 extern(System)
 NTSTATUS parallelSaveLoadThreadProcedureEntry () (scope void* contextPointer) nothrow @nogc
 {

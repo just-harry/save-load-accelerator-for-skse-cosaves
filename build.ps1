@@ -65,7 +65,7 @@ try
 		'-d-debug'
 	}
 
-	$CompilationSuffix = if (-not $Unittest) {'.obj'} else {'.exe'}
+	$CompilationSuffix = if (-not $Unittest) {'.bc'} else {'.exe'}
 
 	$DVersionFlags = $DVersions.ForEach{"--d-version"; $_}
 
@@ -223,6 +223,9 @@ try
 			$ConfigurationFlags `
 			$DVersionFlags `
 			-enable-cross-module-inlining `
+			-flto=full `
+			-lto-embed-bitcode=optimized `
+			--output-bc `
 			$Optimisation `
 			$(if ($Unittest) {$DLL.LinkerArguments.ForEach{'-L', $_}}) `
 			$Variant.Files `
@@ -236,11 +239,12 @@ try
 
 			clang++ `
 				-c `
-				-o "$Base/exception_wrapper.obj" `
+				-o "$Base/exception_wrapper.bc" `
 				"--target=$TargetTriple" `
 				"-march=$TargetCPU" `
 				-fasync-exceptions `
-				-flto=thin `
+				-flto=full `
+				-mllvm -lto-embed-bitcode=optimized `
 				"-fdebug-prefix-map=$DebugPrefixMap" `
 				-g `
 				-gcodeview `
@@ -257,9 +261,11 @@ try
 				/nodefaultlib `
 				/entry:dllEntrypoint `
 				/debug:full `
-				/opt:ref `
+				"/opt:ref,lldlto=2,lldltocgo=3" `
+				"/mllvm:-inline-threshold=1" `
+				"/mllvm:-march=$TargetCPU" `
 				"$Base/$($DLL.Name).res" `
-				"./$Base/exception_wrapper.obj" `
+				"./$Base/exception_wrapper.bc" `
 				"./$Base/$($DLL.Name)$CompilationSuffix" `
 				$ImportedLibraries `
 				$DLL.ImportedLibraries
