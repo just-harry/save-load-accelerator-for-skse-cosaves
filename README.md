@@ -27,6 +27,11 @@ The resulting archives will be available in the `package/release` directory.
 
 Unless otherwise specified, everything in this repository is licensed under the terms of the [BSD Zero Clause License](https://spdx.org/licenses/0BSD.html).
 
+## Acknowledgements
+
+meh321 for Address Library, saving me from the fate of having to purchase the GOG version of Skyrim SE.
+Alan Tse for VR Address Library, saving me from the fate of having to purchase Skyrim VR.
+
 ## Hitchhiker's Guide to the Codebase
 
 This software has been written using D in the style of a better C—but the abominable C runtime is not used—and the D runtime also is not used, and the D standard-library is mostly avoided. \
