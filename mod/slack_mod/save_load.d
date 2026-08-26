@@ -574,7 +574,7 @@ auto pluginStringsFromSerialisationStateIndex () (size_t sparseIndex) nothrow @n
 
 
 pragma(inline, true)
-HANDLE createCosaveFile (scope wchar[] stringBuffer) @trusted nothrow @nogc
+HANDLE createCosaveFile (scope ref char[1024] stringBuffer) @trusted nothrow @nogc
 {
 	const(char)* cosavePath = global.addressOf.skseCosaveSavePath.base;
 
@@ -598,11 +598,29 @@ HANDLE createCosaveFile (scope wchar[] stringBuffer) @trusted nothrow @nogc
 
 	if (cosaveFile == INVALID_HANDLE_VALUE)
 	{
-		reportErrorToUser(
+		uint error = getLastError;
+
+		char[] addendum = formatErrorWithCode(
 			stringBuffer,
 			"The cosave file could not be created!\r\nTHE GAME IS NOT FULLY SAVED.",
-			hresultFromLastError(getLastError)
+			hresultFromLastError(error)
 		);
+
+		assert(addendum.length >= 512);
+
+		char* s = addendum.ptr;
+		size_t spaceLeft = addendum.length - 1;
+
+		if (error == ERROR_PATH_NOT_FOUND)
+		{
+			enum string message = "\r\n\r\n" ~ pathNotFoundErrorMessage!char;
+			blit(s, message.ptr, message.length);
+			s += message.length;
+		}
+
+		*s = '\0';
+
+		reportErrorToUser(stringBuffer.ptr);
 	}
 
 	return cosaveFile;
@@ -830,7 +848,7 @@ bool writeCosaveToFile (
 	HANDLE cosaveFile,
 	scope const(ubyte)* base,
 	scope const(ubyte)* endOfData,
-	scope ref wchar[MAX_PATH] stringBuffer
+	scope ref char[1024] stringBuffer
 ) nothrow @nogc
 {
 	uint actualSize = cast(uint) (endOfData - base);
@@ -853,11 +871,34 @@ bool writeCosaveToFile (
 
 	if (error)
 	{
-		reportErrorToUser(
+		char[] addendum = formatErrorWithCode(
 			stringBuffer,
 			"The cosave file could not be written to!\r\nTHE GAME IS NOT FULLY SAVED.",
 			error
 		);
+
+		assert(addendum.length >= 512);
+
+		char* s = addendum.ptr;
+		size_t spaceLeft = addendum.length - 1;
+
+		if (error == STATUS_DISK_FULL)
+		{
+			enum string message = "\r\n\r\nThis error indicates that the storage device doesn't have enough space for the cosave file.\r\n\r\nAlt+Tab out of the game, and try to free up some space on the disk that the game's saves' folder is located on, and then save the game again.";
+			blit(s, message.ptr, message.length);
+			s += message.length;
+		}
+		else if (error == STATUS_INVALID_USER_BUFFER)
+		{
+			enum string message = "\r\n\r\nThis error typically indicates that some other mod is interfering with S.L.A.C.K.'s vectored-exception-handler.\r\n\r\nPlease review your recently installed mods.\r\n\r\nOlder versions of Skyrim Crash Guard are known to cause this issue.";
+			blit(s, message.ptr, message.length);
+			s += message.length;
+		}
+
+		*s = '\0';
+
+		reportErrorToUser(stringBuffer.ptr);
+
 		return false;
 	}
 
@@ -913,9 +954,9 @@ void saveCosaveSerial () nothrow @nogc
 
 	scope(exit) NtSetInformationThread(thisThread, THREADINFOCLASS.ThreadPriority, &originalThreadPriority, originalThreadPriority.sizeof);
 
-	wchar[MAX_PATH] stringBuffer = void;
+	wchar[512] stringBuffer = void;
 
-	HANDLE cosaveFile = createCosaveFile(stringBuffer);
+	HANDLE cosaveFile = createCosaveFile(cast(char[1024]) stringBuffer);
 
 	if (cosaveFile == INVALID_HANDLE_VALUE)
 	{
@@ -958,7 +999,7 @@ void saveCosaveSerial () nothrow @nogc
 
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[2]);
 
-	if (!writeCosaveToFile(cosaveFile, base, endOfData, stringBuffer))
+	if (!writeCosaveToFile(cosaveFile, base, endOfData, cast(char[1024]) stringBuffer))
 	{
 		return;
 	}
@@ -991,9 +1032,9 @@ void saveCosaveParallel () nothrow @nogc
 
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[0]);
 
-	wchar[MAX_PATH] stringBuffer = void;
+	wchar[512] stringBuffer = void;
 
-	HANDLE cosaveFile = createCosaveFile(stringBuffer);
+	HANDLE cosaveFile = createCosaveFile(cast(char[1024]) stringBuffer);
 
 	if (cosaveFile == INVALID_HANDLE_VALUE)
 	{
@@ -1197,7 +1238,7 @@ waitingForSaveToFinish:
 
 	endOfData = global.saveLoad.parallel.cosaveFileHead.atomicLoad!(MemoryOrder.acq);
 
-	if (!writeCosaveToFile(cosaveFile, base, endOfData, stringBuffer))
+	if (!writeCosaveToFile(cosaveFile, base, endOfData, cast(char[1024]) stringBuffer))
 	{
 		return;
 	}
@@ -1467,8 +1508,14 @@ bool growCosaveFileBufferThreadSafely (scope const(ubyte)* requiredCommit) @trus
 }
 
 
+enum immutable(Char[]) pathNotFoundErrorMessage (Char) = (
+	  "This error indicates that the game's saves' folder either does not exist, or is not accessible.\r\n\r\n"
+	~ "Please ensure that your game's saves' folder exists, and is accessible by the current user of your operating system."
+);
+
+
 pragma(inline, true)
-HANDLE openCosaveFile (scope wchar[] stringBuffer) @trusted nothrow @nogc
+HANDLE openCosaveFile (scope ref char[1024] stringBuffer) @trusted nothrow @nogc
 {
 	const(char)* cosavePath = global.addressOf.skseCosaveSavePath.base;
 
@@ -1490,11 +1537,53 @@ HANDLE openCosaveFile (scope wchar[] stringBuffer) @trusted nothrow @nogc
 
 	if (cosaveFile == INVALID_HANDLE_VALUE)
 	{
-		reportErrorToUser(
+		uint error = getLastError;
+
+		char[] addendum = formatErrorWithCode(
 			stringBuffer,
 			"The cosave file could not be opened!\r\nTHE GAME IS NOT FULLY LOADED.",
-			hresultFromLastError(getLastError)
+			hresultFromLastError(error)
 		);
+
+		assert(addendum.length >= 512);
+
+		char* s = addendum.ptr;
+		size_t spaceLeft = addendum.length - 1;
+
+		if (error == ERROR_FILE_NOT_FOUND)
+		{
+			enum string message = "\r\n\r\nThis error indicates that the cosave file either does not exist, or is not accessible.\r\n\r\nThe cosave is expected to be present with a file name of: \"";
+			blit(s, message.ptr, message.length);
+			s += message.length;
+			spaceLeft -= message.length + 2;
+
+			const(char)* path = global.addressOf.skseCosaveSavePath.base;
+			const(char)* end = path + global.addressOf.skseCosaveSavePath.size;
+			const(char)* p = end;
+
+			for (; p > path;)
+			{
+				--p;
+				if (*p == '\\') {++p; break;}
+			}
+
+			size_t nameSize = lesserOf(end - p, spaceLeft);
+			blit(s, p, nameSize);
+			s += nameSize;
+
+			*s++ = '"';
+			*s++ = '.';
+		}
+		else if (error == ERROR_PATH_NOT_FOUND)
+		{
+			enum string message = "\r\n\r\n" ~ pathNotFoundErrorMessage!char;
+			blit(s, message.ptr, message.length);
+			s += message.length;
+		}
+
+		*s = '\0';
+
+		reportErrorToUser(stringBuffer.ptr);
 	}
 
 	return cosaveFile;
@@ -1601,9 +1690,9 @@ void loadCosaveSerial () nothrow @nogc
 
 	scope(exit) NtSetInformationThread(thisThread, THREADINFOCLASS.ThreadPriority, &originalThreadPriority, originalThreadPriority.sizeof);
 
-	wchar[MAX_PATH] stringBuffer = void;
+	wchar[512] stringBuffer = void;
 
-	HANDLE cosaveFile = openCosaveFile(stringBuffer);
+	HANDLE cosaveFile = openCosaveFile(cast(char[1024]) stringBuffer);
 
 	if (cosaveFile == INVALID_HANDLE_VALUE)
 	{
@@ -1616,7 +1705,7 @@ void loadCosaveSerial () nothrow @nogc
 
 	size_t cosaveFileSize = void;
 
-	if (!readCosaveFromFile(cosaveFile, &cosaveFileSize, stringBuffer))
+	if (!readCosaveFromFile(cosaveFile, &cosaveFileSize, stringBuffer[0 .. MAX_PATH]))
 	{
 		return;
 	}
@@ -1921,9 +2010,9 @@ version (SLACKVerificationMode)
 		std_string* cosavePath = global.addressOf.skseCosaveSavePath;
 		*(cosavePath.base + cosavePath.size - 1) = 'l';
 
-		wchar[MAX_PATH] stringBuffer = void;
+		wchar[512] stringBuffer = void;
 
-		HANDLE verificationLog = createCosaveFile(stringBuffer);
+		HANDLE verificationLog = createCosaveFile(cast(char[1024]) stringBuffer);
 
 		if (verificationLog == INVALID_HANDLE_VALUE)
 		{
