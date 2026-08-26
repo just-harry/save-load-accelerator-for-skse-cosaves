@@ -40,3 +40,12 @@ if (is(typeof(offset) == EXEBasedOffset!T, T) && __traits(getMember, offset, tar
 	}
 }
 
+
+/+ This address can be found by searching for references to the string "ScreenShot: File '%s' created",
+   its sole reference loads its address into a register, the second call following that load
+   is a call of this function.
+   SE Address Library ID: 52050; AE Address Library ID: 52933 +/
+enum EXEBasedOffset!(
+	void function (scope const(char)* message, scope const(char)* soundEffect, ubyte allowOnlyOneAtATime) nothrow @nogc
+) showCornerMessage = {ae7_99: 0x009917d0, ae1170: 0x0097a5e0, ae1130: 0x0097aa30, ae640: 0x0091bc70, ae353: 0x0090a520, se: 0x008da3d0, vr: 0x00908170, gog: 0x0097c0b0, gog659: 0x0091b3e0};
+
