@@ -66,6 +66,7 @@ struct SaveLoadState
 struct SaveLoadStateSerial
 {
 	SaveLoadPluginState pluginState;
+	const(Unaligned!(Cosave.RecordHeader))* lastLoadedRecordHeader;
 }
 
 
@@ -294,6 +295,8 @@ struct Loading
 
 		--pluginState.recordCount;
 
+		global.saveLoad.serial.lastLoadedRecordHeader = recordHeader;
+
 		ubyte* recordData = cast(ubyte*) recordHeader + Cosave.RecordHeader.sizeof;
 
 		Unaligned!(Cosave.RecordHeader)* nextRecordHeader = unaligned(
@@ -519,6 +522,7 @@ void allowPluginsToLoadWhenSKSEIsNotLoading () ()
 	global.saveLoad.serial.pluginState.tail = global.saveLoad.serial.pluginState.head;
 	global.saveLoad.serial.pluginState.currentRecordHeader = unaligned(&global.saveLoad.nullCosaveRecordHeader);
 	global.saveLoad.serial.pluginState.recordCount = 0;
+	global.saveLoad.serial.lastLoadedRecordHeader = unaligned(&global.saveLoad.nullCosaveRecordHeader);
 }
 
 
