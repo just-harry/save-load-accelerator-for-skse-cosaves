@@ -5,6 +5,9 @@ module slack_common.user_interface;
 
 import game;
 
+import ldc.attributes : optStrategy;
+
+import slack_common.algorithms;
 import slack_common.bindings;
 import slack_common.memory;
 import slack_common.text;
@@ -115,30 +118,61 @@ void reportErrorToUser (scope const(wchar)* message, uint flags = MB_ICONERROR) 
 }
 
 
-void reportErrorToUser (
-	scope wchar[] stringBuffer,
-	scope const(wchar)[] message,
-	uint errorCode = 0,
-	uint flags = MB_ICONERROR
+@optStrategy("minsize")
+pragma(inline, true)
+Char[] formatErrorWithCode (Char) (
+	return scope Char[] stringBuffer,
+	scope const(Char)[] message,
+	uint errorCode = 0
 ) nothrow @nogc
 in (message.length < stringBuffer.length)
-in (errorCode == 0 || ((stringBuffer.length >= 28) & (stringBuffer.length - 27 > message.length)))
+in (errorCode == 0 || ((stringBuffer.length >= 30) & (stringBuffer.length - 29 > message.length)))
 {
-	wchar* s = stringBuffer.ptr;
+	Char* s = stringBuffer.ptr;
 	blit(s, message.ptr, message.length);
 	s += message.length;
 
 	if (errorCode != 0)
 	{
-		blit(s, "\r\nOS Error Code: 0x"w.ptr, 19);
-		s += 19;
+		enum immutable(Char[]) label = "\r\n\r\nOS Error Code: 0x";
+		blit(s, label.ptr, label.length);
+		s += label.length;
 		errorCode.asHexInto!true(s[0 .. 8]);
 		s += 8;
 	}
 
-	*s = '\0';
+	return stringBuffer.ptr[s - stringBuffer.ptr .. stringBuffer.length];
+}
+
+
+@optStrategy("minsize")
+void reportErrorToUser (Char) (
+	scope Char[] stringBuffer,
+	scope const(Char)[] message,
+	uint errorCode = 0,
+	uint flags = MB_ICONERROR,
+	scope const(Char)[] addendum = null
+) nothrow @nogc
+in (message.length < stringBuffer.length)
+in (errorCode == 0 || ((stringBuffer.length >= 30) & (stringBuffer.length - 29 > message.length)))
+{
+	stringBuffer = formatErrorWithCode(stringBuffer, message, errorCode);
+	*stringBuffer.ptr = '\0';
 
 	reportErrorToUser(stringBuffer.ptr, flags);
+}
+
+
+@optStrategy("minsize")
+void reportErrorToUser (
+	scope wchar[] stringBuffer,
+	scope const(wchar)[] message,
+	uint errorCode = 0,
+	uint flags = MB_ICONERROR,
+	scope const(wchar)[] addendum = null
+) nothrow @nogc
+{
+	reportErrorToUser!wchar(stringBuffer, message, errorCode, flags, addendum);
 }
 
 
