@@ -182,28 +182,50 @@ void parseINIConfiguration (
 
 	alias F = ConfigurationLongLived.Flags;
 
+	@optStrategy("minsize")
+	bool iniFlag (scope const(INIAssignment!(const(char)))* a, scope string key, F flag, bool defaultValue)
+	{
+		pragma(inline, false);
+
+		if (a.key.length == key.length)
+		{
+			if (caseInsensitiveASCIIEquality!true(a.key.ptr, key.ptr, key.length))
+			{
+				conditionallyMutateMask(configuration.flags, flag, iniValueAsBoolean(a.value, defaultValue));
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	enum string flag (string key, string flag_, string defaultValue) =
+	`
+		if (iniFlag(a, "` ~ key ~ `", ` ~ flag_ ~ `, ` ~ defaultValue ~ `)) {return;}
+	`;
+
 	/+ [Settings] +/
 	scope settingsSectionHandler = (scope const(INIAssignment!(const(char)))* a) @trusted
 	{
-		mixin(iniKey!("acceleratesaving", q{conditionallyMutateMask(configuration.flags, F.accelerateSaving, iniValueAsBoolean(a.value, true));}));
-		mixin(iniKey!("accelerateloading", q{conditionallyMutateMask(configuration.flags, F.accelerateLoading, iniValueAsBoolean(a.value, true));}));
-		mixin(iniKey!("errorfriendlymode", q{conditionallyMutateMask(configuration.flags, F.errorFriendlyMode, iniValueAsBoolean(a.value, true));}));
-		mixin(iniKey!("logsavetimingstoconsole", q{conditionallyMutateMask(configuration.flags, F.logSaveTimingsToConsole, iniValueAsBoolean(a.value, true));}));
-		mixin(iniKey!("logloadtimingstoconsole", q{conditionallyMutateMask(configuration.flags, F.logLoadTimingsToConsole, iniValueAsBoolean(a.value, true));}));
-		mixin(iniKey!("workaroundthirdpartybugs", q{conditionallyMutateMask(configuration.flags, F.workAroundThirdPartyBugs, iniValueAsBoolean(a.value, true));}));
+		mixin(flag!("acceleratesaving", q{F.accelerateSaving}, q{true}));
+		mixin(flag!("accelerateloading", q{F.accelerateLoading}, q{true}));
+		mixin(flag!("errorfriendlymode", q{F.errorFriendlyMode}, q{true}));
+		mixin(flag!("logsavetimingstoconsole", q{F.logSaveTimingsToConsole}, q{true}));
+		mixin(flag!("logloadtimingstoconsole", q{F.logLoadTimingsToConsole}, q{true}));
+		mixin(flag!("workaroundthirdpartybugs", q{F.workAroundThirdPartyBugs}, q{true}));
 	};
 
 	/+ [Profiling] +/
 	scope profilingSectionHandler = (scope const(INIAssignment!(const(char)))* a) @trusted
 	{
-		mixin(iniKey!("profilesaving", q{conditionallyMutateMask(configuration.flags, F.profileSaving, iniValueAsBoolean(a.value));}));
-		mixin(iniKey!("profileloading", q{conditionallyMutateMask(configuration.flags, F.profileLoading, iniValueAsBoolean(a.value));}));
+		mixin(flag!("profilesaving", q{F.profileSaving}, q{false}));
+		mixin(flag!("profileloading", q{F.profileLoading}, q{false}));
 	};
 
 	/+ [ParallelSaving] +/
 	scope parallelSavingHandler = (scope const(INIAssignment!(const(char)))* a) @trusted
 	{
-		mixin(iniKey!("enabled", q{conditionallyMutateMask(configuration.flags, F.enableParallelSaving, iniValueAsBoolean(a.value));}));
+		mixin(flag!("enabled", q{F.enableParallelSaving}, q{false}));
 		mixin(iniKey!("threadcount", q{iniValueAsNonNegativeInteger(a.value, &configuration.parallelSavingThreadCount);}));
 	};
 
