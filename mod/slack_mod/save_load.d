@@ -5,6 +5,7 @@ module slack_mod.save_load;
 
 import core.atomic : atomicExchange, atomicFetchAdd, atomicLoad, atomicStore, MemoryOrder;
 
+import ldc.attributes : restrict;
 import ldc.intrinsics : llvm_expect;
 import ldc.llvmasm : __ir_pure;
 
@@ -460,8 +461,8 @@ version (SLACKVerificationMode)
 
 pragma(inline, true)
 void performanceCriticalBlit (
-	scope ubyte* destination,
-	scope const(ubyte)* source,
+	@restrict scope ubyte* destination,
+	@restrict scope const(ubyte)* source,
 	uint length
 ) @trusted pure nothrow @nogc
 {
