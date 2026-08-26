@@ -239,6 +239,7 @@ try
 				-o "$Base/exception_wrapper.obj" `
 				"--target=$TargetTriple" `
 				"-march=$TargetCPU" `
+				-fasync-exceptions `
 				-flto=thin `
 				"-fdebug-prefix-map=$DebugPrefixMap" `
 				-g `
