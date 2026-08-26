@@ -176,6 +176,7 @@ void reportErrorToUser (
 }
 
 
+@optStrategy("minsize")
 void openURL (scope const(wchar)* url) @trusted nothrow @nogc
 {
 	extern(Windows)
