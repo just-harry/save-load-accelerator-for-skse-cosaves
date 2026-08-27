@@ -99,6 +99,7 @@ try
 		'slack_common/user_interface.d'
 		'slack_common/patching.d'
 		'slack_common/cpp.d'
+		'slack_common/oops.d'
 		'slack_common/large_low_overhead_buffer.d'
 		'slack_mod/limits.d'
 		'slack_mod/configuration.d'
