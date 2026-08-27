@@ -73,6 +73,8 @@ try
 	$SourceFiles = $(
 		'game/package.d'
 		'game/offsets.d'
+		'game/events.d'
+		'game/menus.d'
 		'skse64/dll_plugins.d'
 		'skse64/file_handling.d'
 		'skse64/serialisation.d'

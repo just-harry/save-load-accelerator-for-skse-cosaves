@@ -29,7 +29,8 @@ Unless otherwise specified, everything in this repository is licensed under the 
 
 ## Acknowledgements
 
-meh321 for Address Library, saving me from the fate of having to purchase the GOG version of Skyrim SE.
+Ian Patterson, and everyone who has contributed to the Skyrim Script Extender, for making the source-code of SKSE publicly available, and for allowing its reuse. \
+meh321 for Address Library, saving me from the fate of having to purchase the GOG version of Skyrim SE. \
 Alan Tse for VR Address Library, saving me from the fate of having to purchase Skyrim VR.
 
 ## Hitchhiker's Guide to the Codebase
@@ -62,7 +63,7 @@ Thus, a great deal of this repository is my own non-standard-library, found in `
 	- [`mod/slack_common/timing.d`](mod/slack_common/timing.d): Time matters.
 	- [`mod/slack_common/user_interface.d`](mod/slack_common/user_interface.d): Frankly, this is just for popping up an error-message box when something invariably goes pear-shaped.
 	- [`mod/slack_common/version.d`](mod/slack_common/version.d): A bunch of `enum bool` definitions so that we can use `static if` instead of `version`.
-- [`mod/game`](mod/game): This module provides some basic infrastructure for introspecting which version/archetype of Skyrim SE we're targeting.
+- [`mod/game`](mod/game): This module provides some basic infrastructure for introspecting which version/archetype of Skyrim SE we're targeting, and definitions for the game's data-structures and functions.
 	- [`mod/game/offsets.d`](mod/game/offsets.d): Offsets for places in the game's code and data.
 - [`mod/skse64`](mod/skse64): This module provides a minimal set of bindings for SKSE.
 	- [`mod/skse64/hacks`](mod/skse64/hacks): This module isn't for bindings but instead for data and functions that assist in patching SKSE at runtime.
