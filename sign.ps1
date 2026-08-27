@@ -53,7 +53,7 @@ try
 	{
 		$Description = "Save & Load Accelerator for SKSE Cosaves $ReleaseTag"
 
-		$Variants = @('ae7_99', 'ae1170', 'ae1130', 'ae640', 'ae353', 'se', 'vr', 'gog', 'gog659')
+		$Variants = @('ae7_104', 'ae7_99', 'ae1170', 'ae1130', 'ae640', 'ae353', 'se', 'vr', 'gog', 'gog659')
 
 		foreach ($Variant in $Variants)
 		{

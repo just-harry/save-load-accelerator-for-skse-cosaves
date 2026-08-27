@@ -128,6 +128,11 @@ try
 			ResourceFile = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves.rc"
 			Variants = @(
 				[PSCustomObject] @{
+					Name = 'ae7_104'
+					Files = "$SourceBase/game/target_ae7_104.d"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSEPreloader.def"
+				}
+				[PSCustomObject] @{
 					Name = 'ae7_99'
 					Files = "$SourceBase/game/target_ae7_99.d"
 					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSEPreloader.def"

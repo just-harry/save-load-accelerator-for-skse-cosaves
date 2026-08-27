@@ -6,7 +6,12 @@ module skse64.hacks.versioning;
 import game;
 
 
-static if (targetedGameArchetype == GameArchetype.ae7_99)
+static if (targetedGameArchetype == GameArchetype.ae7_104)
+{
+	enum uint expectedSKSE64Version = 0x02_03_001_0;
+	enum string defaultSKSE64DLLName = "skse64_1_7_104.dll";
+}
+else static if (targetedGameArchetype == GameArchetype.ae7_99)
 {
 	enum uint expectedSKSE64Version = 0x02_03_000_0;
 	enum string defaultSKSE64DLLName = "skse64_1_7_99.dll";

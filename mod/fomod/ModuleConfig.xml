@@ -7,6 +7,25 @@
 			<optionalFileGroups order="Explicit">
 				<group name="Please select your version of the game:" type="SelectExactlyOne">
 					<plugins order="Explicit">
+						<plugin name="Skyrim AE v1.7.104; SKSE64 v2.3.1">
+							<description>For version 1.7.104 of Skyrim Anniversary Edition, for which version 2.3.1 of SKSE64 is to be used.</description>
+							<files>
+								<folder source="ae7_104" destination="" />
+							</files>
+							<typeDescriptor>
+								<dependencyType>
+									<defaultType name="Optional" />
+									<patterns>
+										<pattern>
+											<dependencies>
+												<gameDependency version="1.7.104" />
+											</dependencies>
+											<type name="Recommended" />
+										</pattern>
+									</patterns>
+								</dependencyType>
+							</typeDescriptor>
+						</plugin>
 						<plugin name="Skyrim AE v1.7.99; SKSE64 v2.3.0">
 							<description>For version 1.7.99 of Skyrim Anniversary Edition, for which version 2.3.0 of SKSE64 is to be used.</description>
 							<files>

@@ -24,6 +24,7 @@ try
 	$INIFilePath = "$Source/!!!!!!!##`$Save&LoadAcceleratorForSKSECosaves.ini"
 
 	$Variants = @(
+		[PSCustomObject] @{Name = 'ae7_104'; PluginPlace = 'SKSE/Plugins'}
 		[PSCustomObject] @{Name = 'ae7_99'; PluginPlace = 'SKSE/Plugins'}
 		[PSCustomObject] @{Name = 'ae1170'; PluginPlace = 'SKSE/Plugins'}
 		[PSCustomObject] @{Name = 'ae1130'; PluginPlace = 'DLLPlugins'}

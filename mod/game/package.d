@@ -8,6 +8,7 @@ public import game.target;
 
 enum GameArchetype : ubyte
 {
+	ae7_104,
 	ae7_99,
 	ae1170,
 	ae1130,
