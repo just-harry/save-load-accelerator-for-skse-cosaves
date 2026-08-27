@@ -41,6 +41,18 @@ if (is(typeof(offset) == EXEBasedOffset!T, T) && __traits(getMember, offset, tar
 }
 
 
+template fieldAt (string type, string name, string offset)
+{
+	enum string fieldAt = (
+		"pragma(inline, true)
+		ref inout(" ~ type ~ ") " ~ name ~ " () inout @property return scope @trusted pure nothrow @nogc
+		{
+			return *cast(typeof(return)*) (cast(size_t) &this + (" ~ offset ~ "));
+		}"
+	);
+}
+
+
 /+ This address can be found by searching for references to the string "ScreenShot: File '%s' created",
    its sole reference loads its address into a register, the second call following that load
    is a call of this function.
