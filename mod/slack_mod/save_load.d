@@ -10,6 +10,8 @@ import ldc.intrinsics : llvm_expect;
 import ldc.llvmasm : __ir_pure;
 
 import game;
+import game.events;
+import game.menus;
 import game.offsets;
 
 import slack_common.algorithms;
@@ -21,6 +23,7 @@ import slack_common.ini;
 import slack_common.integers;
 import slack_common.large_low_overhead_buffer;
 import slack_common.memory;
+import slack_common.oops;
 import slack_common.simd;
 import slack_common.patching;
 import slack_common.pe;
@@ -47,12 +50,49 @@ import skse64.hacks.offsets;
 enum ulong specialStateSaverTag = ulong(1) << 62;
 
 
+extern(C++)
+class CosaveLoadingErrorNotificationDisplayer : GameEventHandler!MenuStatusChangeEvent
+{
+	override EventContinuance handle (scope MenuStatusChangeEvent* event, scope EventPump!MenuStatusChangeEvent* pump) scope nothrow @nogc
+	{
+		if (event.menuIsClosing)
+		{
+			if (event.menuName is (*based!internedMenuNames).faderMenu)
+			{
+				global.saveLoad.pendingCosaveLoadingErrorFingerprint = 0;
+
+				(*based!deregisterGameEventHandler)(
+					&(*based!gameMenuState).menuStatusChangeEventPump(),
+					cast(void*) global.saveLoad.cosaveLoadingErrorNotificationDisplayer
+				);
+
+				errorNotificationEpilogue!(
+					"loading",
+					ConfigurationLongLived.Flags.showLoadingErrorNotifications,
+					ConfigurationLongLived.Flags.showLoadingWarningNotifications,
+					ConfigurationLongLived.SoundEffect.loadingError,
+					ConfigurationLongLived.SoundEffect.loadingWarning,
+				)(
+					global.saveLoad.pendingCosaveLoadingErrorWasUnrecoverable
+				);
+			}
+		}
+
+		return EventContinuance.go;
+	}
+}
+
+
 struct SaveLoadState
 {
 	Cosave.RecordHeader nullCosaveRecordHeader;
 	ulong unpatchedSaveLoadTime;
 	LargeAndLowOverheadSequentialBuffer cosaveFileBuffer;
 	SaveLoadStateSerial serial;
+	ClassInstance!CosaveLoadingErrorNotificationDisplayer cosaveLoadingErrorNotificationDisplayer;
+	uint cosaveLoadFingerprint;
+	uint pendingCosaveLoadingErrorFingerprint;
+	bool pendingCosaveLoadingErrorWasUnrecoverable;
 	SaveLoadStateParallel parallel;
 
 	version (SLACKVerificationMode)
@@ -1032,7 +1072,7 @@ void saveCosaveSerial () nothrow @nogc
 		);
 	}
 
-	errorNotificationEpilogue!(
+	errorReportingEpilogue!(
 		"saving",
 		ConfigurationLongLived.Flags.showSavingErrorNotifications,
 		ConfigurationLongLived.Flags.showSavingWarningNotifications,
@@ -1282,7 +1322,7 @@ waitingForSaveToFinish:
 		);
 	}
 
-	errorNotificationEpilogue!(
+	errorReportingEpilogue!(
 		"saving",
 		ConfigurationLongLived.Flags.showSavingErrorNotifications,
 		ConfigurationLongLived.Flags.showSavingWarningNotifications,
@@ -1711,6 +1751,8 @@ bool readCosaveFromFile (
 
 void loadCosaveSerial () nothrow @nogc
 {
+	++global.saveLoad.cosaveLoadFingerprint;
+
 	ulong[4] time = void;
 
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[0]);
@@ -1722,6 +1764,16 @@ void loadCosaveSerial () nothrow @nogc
 	NtSetInformationThread(thisThread, THREADINFOCLASS.ThreadPriority, &highestNonRealtimeThreadPriority, highestNonRealtimeThreadPriority.sizeof);
 
 	scope(exit) NtSetInformationThread(thisThread, THREADINFOCLASS.ThreadPriority, &originalThreadPriority, originalThreadPriority.sizeof);
+
+	if (global.saveLoad.pendingCosaveLoadingErrorFingerprint != 0)
+	{
+		global.saveLoad.pendingCosaveLoadingErrorFingerprint = 0;
+
+		(*based!deregisterGameEventHandler)(
+			&(*based!gameMenuState).menuStatusChangeEventPump(),
+			cast(void*) global.saveLoad.cosaveLoadingErrorNotificationDisplayer
+		);
+	}
 
 	wchar[512] stringBuffer = void;
 
@@ -2025,7 +2077,7 @@ void loadCosaveSerial () nothrow @nogc
 		);
 	}
 
-	errorNotificationEpilogue!(
+	errorReportingEpilogue!(
 		"loading",
 		ConfigurationLongLived.Flags.showLoadingErrorNotifications,
 		ConfigurationLongLived.Flags.showLoadingWarningNotifications,
@@ -2190,7 +2242,7 @@ void formatHeaderSignature (scope ref char[16] buffer, uint signature) @trusted 
 
 
 pragma(inline, true)
-void errorNotificationEpilogue (
+void errorReportingEpilogue (
 	string verbPresentTense,
 	ConfigurationLongLived.Flags errorFlag,
 	ConfigurationLongLived.Flags warningFlag,
@@ -2213,6 +2265,44 @@ void errorNotificationEpilogue (
 		return;
 	}
 
+	static if (verbPresentTense == "loading")
+	{
+		if (global.saveLoad.pendingCosaveLoadingErrorFingerprint == 0)
+		{
+			global.saveLoad.pendingCosaveLoadingErrorFingerprint = global.saveLoad.cosaveLoadFingerprint;
+
+			global.saveLoad.pendingCosaveLoadingErrorWasUnrecoverable = unrecoverableErrorsOccurred;
+
+			(*based!registerGameEventHandler)(
+				&(*based!gameMenuState).menuStatusChangeEventPump(),
+				cast(void*) global.saveLoad.cosaveLoadingErrorNotificationDisplayer
+			);
+		}
+	}
+	else
+	{
+		errorNotificationEpilogue!(
+			verbPresentTense,
+			errorFlag,
+			warningFlag,
+			errorSoundEffect,
+			warningSoundEffect,
+		)(unrecoverableErrorsOccurred);
+	}
+}
+
+
+pragma(inline, true)
+void errorNotificationEpilogue (
+	string verbPresentTense,
+	ConfigurationLongLived.Flags errorFlag,
+	ConfigurationLongLived.Flags warningFlag,
+	ConfigurationLongLived.SoundEffect errorSoundEffect,
+	ConfigurationLongLived.SoundEffect warningSoundEffect,
+) (
+	bool unrecoverableErrorsOccurred
+)
+{
 	static void showNotification (scope const(char)* message, ConfigurationLongLived.Flags flag, ConfigurationLongLived.SoundEffect soundEffect)
 	{
 		pragma(inline, false);
@@ -2233,8 +2323,6 @@ void errorNotificationEpilogue (
 	}
 	else
 	{
-		assert(recoverableErrorsOccurred);
-
 		enum string message = "S.L.A.C.K. | Recoverable errors occurred whilst " ~ verbPresentTense ~ " the cosave! Please review the console.";
 		showNotification(message, warningFlag, warningSoundEffect);
 	}

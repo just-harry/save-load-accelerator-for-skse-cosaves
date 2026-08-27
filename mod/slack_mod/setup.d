@@ -18,6 +18,7 @@ import slack_common.ini;
 import slack_common.integers;
 import slack_common.large_low_overhead_buffer;
 import slack_common.memory;
+import slack_common.oops;
 import slack_common.patching;
 import slack_common.pe;
 import slack_common.peb_access;
@@ -173,6 +174,8 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 			}
 		}
 	}
+
+	initialiseClassInstance(global.saveLoad.cosaveLoadingErrorNotificationDisplayer);
 
 	uint error = void;
 	const(wchar)[] errorMessage = void;
