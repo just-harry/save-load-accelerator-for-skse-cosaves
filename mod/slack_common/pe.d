@@ -27,6 +27,7 @@ struct PESections
 }
 
 
+@optStrategy("minsize")
 size_t findSectionsOfPE64 (scope void* image, scope PESections* sections) @trusted nothrow @nogc
 {
 	auto dosStub = cast(IMAGE_DOS_HEADER*) image;
