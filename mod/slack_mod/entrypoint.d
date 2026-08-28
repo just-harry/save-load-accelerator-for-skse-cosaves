@@ -42,37 +42,36 @@ BOOL dllEntrypoint (HINSTANCE hinstDLL, uint fdwReason, scope void* lpvReserved)
 }
 
 
+
+extern(C)
+immutable(DLLPluginVersionMetadata) SKSEPlugin_Version = {
+	schemaVersion: DLLPluginVersionMetadata.SchemaVersion.v1,
+	pluginVersion: /+release-version+/0x01_03_004_0,
+	name: "Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.)",
+	authorName: `"Just Harry"`,
+	emailAddress: "regarding__s_l_a_c_k_@harrygillanders.com",
+	/+ These support flags are a complete lie. We do our own version checking. +/
+	gameVersionSupportExtendedFlags: DLLPluginVersionMetadata.GameVersionSupportExtendedFlags.doesNotDependOnFixedOffsets,
+	gameVersionSupportFlags: DLLPluginVersionMetadata.GameVersionSupportFlags.hasNoHardcodedAddresses,
+};
+
+
+extern(C)
+bool SKSEPlugin_Query (scope const(SKSE64Provider)* skse, scope DLLPluginMetadata* metadata) nothrow @nogc
+{
+	metadata.schemaVersion = metadata.SchemaVersion.v1;
+	metadata.name = "Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.)";
+	metadata.pluginVersion = /+release-version+/0x01_03_004_0;
+	return !skse.isCK;
+}
+
+
 static if (expectedSKSE64Version >= 0x02_02_007_0)
 {
 	extern(C)
-	immutable(DLLPluginVersionMetadata) SKSEPlugin_Version = {
-		schemaVersion: DLLPluginVersionMetadata.SchemaVersion.v1,
-		pluginVersion: /+release-version+/0x01_03_004_0,
-		name: "Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.)",
-		authorName: `"Just Harry"`,
-		emailAddress: "regarding__s_l_a_c_k_@harrygillanders.com",
-		/+ These support flags are a complete lie. We do our own version checking. +/
-		gameVersionSupportExtendedFlags: DLLPluginVersionMetadata.GameVersionSupportExtendedFlags.doesNotDependOnFixedOffsets,
-		gameVersionSupportFlags: DLLPluginVersionMetadata.GameVersionSupportFlags.hasNoHardcodedAddresses,
-	};
-
-
-	extern(C)
 	bool SKSEPlugin_Preload (const(SKSE64Provider)* skse) nothrow @nogc
 	{
-		wchar[512] stringBuffer = void;
-		uint skse64Version = skse.skse64Version;
-
-		if (skse64Version != expectedSKSE64Version)
-		{
-			showComprehensiveSKSEVersionMismatchMessage(stringBuffer, skse64Version, cast(void[0]) []);
-		}
-		else
-		{
-			setUpEverything(stringBuffer);
-		}
-
-		return true;
+		return setupFromSKSELoad(skse);
 	}
 
 
@@ -112,12 +111,32 @@ static if (expectedSKSE64Version >= 0x02_02_007_0)
 }
 else
 {
-	extern(Windows)
-	void SaveLoadAcceleratorForSKSECosaves_InitialiseViaPreloader () nothrow @nogc
+	extern(C)
+	bool SKSEPlugin_Load (const(SKSE64Provider)* skse) nothrow @nogc
 	{
-		wchar[512] stringBuffer = void;
+		return setupFromSKSELoad(skse);
+	}
+}
+
+
+extern(C)
+pragma(inline, true)
+bool setupFromSKSELoad () (const(SKSE64Provider)* skse) nothrow @nogc
+{
+
+	wchar[512] stringBuffer = void;
+	uint skse64Version = skse.skse64Version;
+
+	if (skse64Version != expectedSKSE64Version)
+	{
+		showComprehensiveSKSEVersionMismatchMessage(stringBuffer, skse64Version, cast(void[0]) []);
+	}
+	else
+	{
 		setUpEverything(stringBuffer);
 	}
+
+	return true;
 }
 
 

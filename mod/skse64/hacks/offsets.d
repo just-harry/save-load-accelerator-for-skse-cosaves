@@ -14,7 +14,6 @@ enum VersionedOffsets versionedOffsets = {
 	      loadedPluginSize: {ae7_104: 0x000003b8, ae7_99: 0x000003b8, ae1170: 0x000003b8, ae1130: 0x000003b0, ae640: 0x000003b0, ae353: 0x000003b0, se: 0x00000030, vr: 0x00000030, gog: 0x000003b0, gog659: 0x000003b0}, /+ constant +/
 	        cosaveSavePath: {ae7_104: 0x00001a38, ae7_99: 0x00001a38, ae1170: 0x00001a38, ae1130: 0x00001b18, ae640: 0x00001b18, ae353: 0x00001b18, se: 0x00001b78, vr: 0x000141e0, gog: 0x00001b18, gog659: 0x00001b18}, /+ .data +/
 	    cosaveAwarePlugins: {ae7_104: 0x00010a98, ae7_99: 0x00010a98, ae1170: 0x00010a98, ae1130: 0x00010d88, ae640: 0x00010d40, ae353: 0x00010d30, se: 0x000123a8, vr: 0x000141c8, gog: 0x00010bd8, gog659: 0x00010d30}, /+ .data +/
-	    findDLLPluginsCall: {ae7_104: 0x00000000, ae7_99: 0x00000000, ae1170: 0x00000000, ae1130: 0x00088f80, ae640: 0x00088dc0, ae353: 0x00088a63, se: 0x00087153, vr: 0x0009c033, gog: 0x0008b2f0, gog659: 0x00088f90}, /+ .text +/
 	    pluginFilePathCall: {ae7_104: 0x00000000, ae7_99: 0x00000000, ae1170: 0x00000000, ae1130: 0x00000000, ae640: 0x00000000, ae353: 0x00000000, se: 0x0007f809, vr: 0x0009490c, gog: 0x00000000, gog659: 0x00000000}, /+ .text +/
 	     supplyProviderLEA: {ae7_104: 0x0007ff9f, ae7_99: 0x0007ff8f, ae1170: 0x0007ff9f, ae1130: 0x00080fa4, ae640: 0x00080de4, ae353: 0x00080dc4, se: 0x0007fc24, vr: 0x00094e24, gog: 0x00082fb4, gog659: 0x00080fa4}, /+ .text +/
 	          createCosave: {ae7_104: 0x00086b50, ae7_99: 0x00086af0, ae1170: 0x00086b00, ae1130: 0x000874f0, ae640: 0x00087330, ae353: 0x000871f0, se: 0x000854e0, vr: 0x0009af50, gog: 0x00089820, gog659: 0x00087510}, /+ .text +/
@@ -70,7 +69,6 @@ struct VersionedOffsets
 	VersionedOffset loadedPluginSize;
 	VersionedOffset cosaveSavePath;
 	VersionedOffset cosaveAwarePlugins;
-	VersionedOffset findDLLPluginsCall;
 	VersionedOffset pluginFilePathCall;
 	VersionedOffset supplyProviderLEA;
 	VersionedOffset createCosave;

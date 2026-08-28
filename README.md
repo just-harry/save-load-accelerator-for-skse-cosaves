@@ -78,7 +78,7 @@ Thus, a great deal of this repository is my own non-standard-library, found in `
 	- [`mod/slack_mod/limits.d`](mod/slack_mod/limits.d): Provides the definitions for any hardcoded limits for the plugin's functionality.
 	- [`mod/slack_mod/Save&LoadAcceleratorForSKSECosaves.rc`](mod/slack_mod/Save&LoadAcceleratorForSKSECosaves.rc): Defines the product-version metadata for the plugin's DLL.
 	- [`mod/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSEPreloader.def`](mod/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSEPreloader.def): Defines the exports of the plugin's DLL for versions targeting SKSE's preloader.
-	- [`mod/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def`](mod/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def): Defines the exports of the plugin's DLL for versions targeting meh321's or Engine Fixes' preloader.
+	- [`mod/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def`](mod/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def): Defines the exports of the plugin's DLL for versions targeting SKSE's usual loader.
 	- [`mod/slack_mod/save_load.d`](mod/slack_mod/save_load.d): The actual implementation of optimised saving and loading for SKSE cosave files.
 	- [`mod/slack_mod/setup.d`](mod/slack_mod/setup.d): This file is responsible for installing the optimised saving/loading hooks at runtime, and generally setting up all the fiddly global state.
 - [`mod/Save&LoadAcceleratorForSKSECosaves.ini`](mod/Save&LoadAcceleratorForSKSECosaves.ini): The default configuration file for the plugin.

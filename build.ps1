@@ -145,37 +145,37 @@ try
 				[PSCustomObject] @{
 					Name = 'ae1130'
 					Files = "$SourceBase/game/target_ae1130.d"
-					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'ae640'
 					Files = "$SourceBase/game/target_ae640.d"
-					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'ae353'
 					Files = "$SourceBase/game/target_ae353.d"
-					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'se'
 					Files = "$SourceBase/game/target_se.d"
-					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'vr'
 					Files = "$SourceBase/game/target_vr.d"
-					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'gog'
 					Files = "$SourceBase/game/target_gog.d"
-					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def"
 				}
 				[PSCustomObject] @{
 					Name = 'gog659'
 					Files = "$SourceBase/game/target_gog659.d"
-					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-DLLPluginLoader.def"
+					ExportsDef = "$SourceBase/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def"
 				}
 			)
 		}

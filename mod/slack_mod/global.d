@@ -26,7 +26,6 @@ import skse64.serialisation;
 __gshared GlobalState global;
 
 
-enum bool shouldUseDLLNotifications = targetedGameVersion <= 0x01_06_161_0;
 enum bool observingPluginFileNameViaCall = targetedGameVersion < 0x01_06_000_0;
 
 
@@ -43,11 +42,6 @@ struct GlobalState
 	bool unrecoverableErrorsOccurred;
 	SpecialPlugin currentSpecialPluginBeingLoaded;
 	ubyte skseConsolePrintLock;
-
-	static if (shouldUseDLLNotifications)
-	{
-		void* dllRegistrationNotificationCookie;
-	}
 
 	SKSE64Provider specialSKSE64Provider;
 	SerialisationProvider specialSerialisationProvider;
@@ -87,7 +81,6 @@ struct ResolvedAddresses
 		}
 	}
 
-	ubyte* findDLLPluginsCall;
 	ubyte* supplySKSEProviderLEA;
 	ubyte* createSKSECosave;
 	ubyte* restoreSKSECosave;
@@ -109,12 +102,6 @@ struct ResolvedAddresses
 
 struct DynamicallyLinked
 {
-	static if (shouldUseDLLNotifications)
-	{
-		@"ntdll" .LdrRegisterDllNotification LdrRegisterDllNotification;
-		@"ntdll" .LdrUnregisterDllNotification LdrUnregisterDllNotification;
-	}
-
 	@"ntdll" .NtAllocateVirtualMemoryEx NtAllocateVirtualMemoryEx;
 
 	@"ntdll" .RtlWaitOnAddress RtlWaitOnAddress;
@@ -148,31 +135,6 @@ enum SpecialPlugin : ubyte
 {
 	none,
 	stbWidgets
-}
-
-
-static if (shouldUseDLLNotifications)
-{
-	extern(Windows)
-	void dllRegistrationNotificationHandler () (uint reason, scope const(LDR_DLL_NOTIFICATION_DATA)* notification, scope void* context) nothrow @nogc
-	{
-		if (reason == LDR_DLL_NOTIFICATION_REASON_LOADED)
-		{
-			const(wchar[])* skseDLLName = &global.configuration.skseDLLName;
-
-			if ((notification.Loaded.BaseDllName.Length >>> 1) == skseDLLName.length)
-			{
-				if (caseInsensitiveASCIIEquality(notification.Loaded.BaseDllName.Buffer, skseDLLName.ptr, skseDLLName.length))
-				{
-					wchar[512] stringBuffer = void;
-
-					setUpEverythingWithSKSEDLL(stringBuffer, cast(ubyte*) notification.Loaded.DllBase);
-
-					global.linked.LdrUnregisterDllNotification(global.dllRegistrationNotificationCookie);
-				}
-			}
-		}
-	}
 }
 
 

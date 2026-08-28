@@ -27,13 +27,13 @@ try
 		[PSCustomObject] @{Name = 'ae7_104'; PluginPlace = 'SKSE/Plugins'}
 		[PSCustomObject] @{Name = 'ae7_99'; PluginPlace = 'SKSE/Plugins'}
 		[PSCustomObject] @{Name = 'ae1170'; PluginPlace = 'SKSE/Plugins'}
-		[PSCustomObject] @{Name = 'ae1130'; PluginPlace = 'DLLPlugins'}
-		[PSCustomObject] @{Name = 'ae640'; PluginPlace = 'DLLPlugins'}
-		[PSCustomObject] @{Name = 'ae353'; PluginPlace = 'DLLPlugins'}
-		[PSCustomObject] @{Name = 'se'; PluginPlace = 'DLLPlugins'}
-		[PSCustomObject] @{Name = 'vr'; PluginPlace = 'DLLPlugins'}
-		[PSCustomObject] @{Name = 'gog'; PluginPlace = 'DLLPlugins'}
-		[PSCustomObject] @{Name = 'gog659'; PluginPlace = 'DLLPlugins'}
+		[PSCustomObject] @{Name = 'ae1130'; PluginPlace = 'SKSE/Plugins'}
+		[PSCustomObject] @{Name = 'ae640'; PluginPlace = 'SKSE/Plugins'}
+		[PSCustomObject] @{Name = 'ae353'; PluginPlace = 'SKSE/Plugins'}
+		[PSCustomObject] @{Name = 'se'; PluginPlace = 'SKSE/Plugins'}
+		[PSCustomObject] @{Name = 'vr'; PluginPlace = 'SKSE/Plugins'}
+		[PSCustomObject] @{Name = 'gog'; PluginPlace = 'SKSE/Plugins'}
+		[PSCustomObject] @{Name = 'gog659'; PluginPlace = 'SKSE/Plugins'}
 	)
 
 	ForEach-InParallel $Variants `

@@ -51,115 +51,115 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 
 	global.linked.linkAll;
 
-	static if (expectedSKSE64Version >= 0x02_02_007_0)
+	/+ With the release of version 2.2.7, SKSE acquired a preloader,
+	   and this preloader preloads plugins before Engine Fixes' preloader preloads plugins.
+	   Thus, S.L.A.C.K. was migrated over to using SKSE's preloader:
+	   this required S.L.A.C.K.'s DLL to be moved from `Data/DLLPlugins`
+	   to `Data/SKSE/Plugins`; unfortunately, this means older versions of S.L.A.C.K.
+	   can be present at the same time as newer versions.
+
+	   Then, with the release of version 1.4.0 of S.L.A.C.K.,
+	   all targets were migrated over to using SKSE's loader
+	   for improved reliability in practice.
+
+	   To avoid this state of things confusing users, we detect the presence
+	   of `Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll` accordingly.
+
+	   However, our woes don't end there!
+	   There was at one point a short-lived, hostile fork of S.L.A.C.K..
+	   (hostile, as in: the fork will be deleted IFF upstream mainlines the fork's changes.)
+	   That fork used the exact same DLL name and error-message-dialog title as S.L.A.C.K.,
+	   and so to an end-user it appears no different to S.L.A.C.K. proper.
+	   But the fork did end up using a different name for the mod itself,
+	   so it's not outside the realm of possibility (read: this has already happened)
+	   for a user to forget that they have the fork installed and enabled.
+
+	   The fork was released with two different version-numbers: v1.4.0; and v1.5.0,
+	   during a period where S.L.A.C.K. held steadfast on v1.3.2.
+
+	   So, to detect the fork we inspect the version-info of the DLL file.
+	   If the file-version is 1.4.0.0-or-greater, and the legal-copyright field
+	   is 71-code-units long (including the null-terminator),
+	   and the copyright year is 2025 followed by a space, then the DLL is of the fork.
+
+	   Starting with v1.4.0 of S.L.A.C.K. proper, the copyright year is now a range
+	   allowing for the fork and the original to be distinguished via version-info alone.
+
+	   https://www.youtube.com/watch?v=FL0PvTmo5CE&t=7s +/
+
+	uint exePathLength = void;
+
+	if ((exePathLength = GetModuleFileNameW(null, stringBuffer.ptr, MAX_PATH)) != 0)
 	{
-		/+ With the release of version 2.2.7, SKSE acquired a preloader,
-		   and this preloader preloads plugins before Engine Fixes' preloader preloads plugins.
-		   Thus, S.L.A.C.K. was migrated over to using SKSE's preloader:
-		   this required S.L.A.C.K.'s DLL to be moved from `Data/DLLPlugins`
-		   to `Data/SKSE/Plugins`; unfortunately, this means older versions of S.L.A.C.K.
-		   can be present at the same time as newer versions.
+		wchar* end = stringBuffer.ptr + exePathLength;
 
-		   To avoid this state of things confusing users, we detect the presence
-		   of `Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll` accordingly.
-
-		   However, our woes don't end there!
-		   There was at one point a short-lived, hostile fork of S.L.A.C.K..
-		   (hostile, as in: the fork will be deleted IFF upstream mainlines the fork's changes.)
-		   That fork used the exact same DLL name and error-message-dialog title as S.L.A.C.K.,
-		   and so to an end-user it appears no different to S.L.A.C.K. proper.
-		   But the fork did end up using a different name for the mod itself,
-		   so it's not outside the realm of possibility (read: this has already happened)
-		   for a user to forget that they have the fork installed and enabled.
-
-		   The fork was released with two different version-numbers: v1.4.0; and v1.5.0,
-		   during a period where S.L.A.C.K. held steadfast on v1.3.2.
-
-		   So, to detect the fork we inspect the version-info of the DLL file.
-		   If the file-version is 1.4.0.0-or-greater, and the legal-copyright field
-		   is 71-code-units long (including the null-terminator),
-		   and the copyright year is 2025 followed by a space, then the DLL is of the fork.
-
-		   Starting with v1.4.0 of S.L.A.C.K. proper, the copyright year is now a range
-		   allowing for the fork and the original to be distinguished via version-info alone.
-
-		   https://www.youtube.com/watch?v=FL0PvTmo5CE&t=7s +/
-
-
-		uint exePathLength = void;
-
-		if ((exePathLength = GetModuleFileNameW(null, stringBuffer.ptr, MAX_PATH)) != 0)
+		for (; end > stringBuffer.ptr;)
 		{
-			wchar* end = stringBuffer.ptr + exePathLength;
+			--end;
+			if (*end == '\\') break;
+		}
 
-			for (; end > stringBuffer.ptr;)
+		size_t spaceLeft = MAX_PATH - (end - stringBuffer.ptr);
+
+		if (spaceLeft >= 55)
+		{
+			blit(end + 1, `Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll`w.ptr, 55);
+
+			uint attributes = GetFileAttributesW(stringBuffer.ptr);
+
+			if ((attributes != INVALID_FILE_ATTRIBUTES) & ((attributes & FILE_ATTRIBUTE_DIRECTORY) == 0))
 			{
-				--end;
-				if (*end == '\\') break;
-			}
+				enum string usualMessage = (
+					  "An older version of S.L.A.C.K. is present in the \"Data\\DLLPlugins\" folder, this will cause a version-mismatch error.\r\n\r\n"
+					~ "You should remove or disable the older version of S.L.A.C.K..\r\n\r\n"
+					~ "If you use Mod Organizer 2, reinstall S.L.A.C.K. and use the \"Replace\" option when prompted to."
+				);
 
-			size_t spaceLeft = MAX_PATH - (end - stringBuffer.ptr);
+				immutable(char)* message = usualMessage;
 
-			if (spaceLeft >= 55)
-			{
-				blit(end + 1, `Data\DLLPlugins\Save&LoadAcceleratorForSKSECosaves.dll`w.ptr, 55);
+				HMODULE versionDLL = LoadLibraryW("version.dll");
 
-				uint attributes = GetFileAttributesW(stringBuffer.ptr);
-
-				if ((attributes != INVALID_FILE_ATTRIBUTES) & ((attributes & FILE_ATTRIBUTE_DIRECTORY) == 0))
+				/+ This whole nest of if-statements is gross, but whatever. +/
+				if (versionDLL != null)
 				{
-					enum string usualMessage = (
-						  "An older version of S.L.A.C.K. is present in the \"Data\\DLLPlugins\" folder, this will cause a version-mismatch error.\r\n\r\n"
-						~ "You should remove or disable the older version of S.L.A.C.K..\r\n\r\n"
-						~ "If you use Mod Organizer 2, reinstall S.L.A.C.K. and use the \"Replace\" option when prompted to."
-					);
+					scope(exit) FreeLibrary(versionDLL);
 
-					immutable(char)* message = usualMessage;
+					alias GetFileVersionInfoW = extern(Windows) BOOL function (scope const(wchar)* lptstrFilename, uint dwHandle, uint dwLen, scope void* lpData) nothrow @nogc;
+					alias VerQueryValueW = extern(Windows) BOOL function (scope const(void)* pBlock, scope const(wchar)* lpSubBlock, scope void** lplpBuffer, scope uint* puLen) nothrow @nogc;
+					auto getFileVersionInfoW = mixin(dynamicallyLink!(q{versionDLL}, q{GetFileVersionInfoW}));
+					auto verQueryValueW = mixin(dynamicallyLink!(q{versionDLL}, q{VerQueryValueW}));
 
-					HMODULE versionDLL = LoadLibraryW("version.dll");
-
-					/+ This whole nest of if-statements is gross, but whatever. +/
-					if (versionDLL != null)
+					if ((getFileVersionInfoW != null) & (verQueryValueW != null))
 					{
-						scope(exit) FreeLibrary(versionDLL);
+						ubyte[2048] versionInfo = void;
+						uint ignored = void;
 
-						alias GetFileVersionInfoW = extern(Windows) BOOL function (scope const(wchar)* lptstrFilename, uint dwHandle, uint dwLen, scope void* lpData) nothrow @nogc;
-						alias VerQueryValueW = extern(Windows) BOOL function (scope const(void)* pBlock, scope const(wchar)* lpSubBlock, scope void** lplpBuffer, scope uint* puLen) nothrow @nogc;
-						auto getFileVersionInfoW = mixin(dynamicallyLink!(q{versionDLL}, q{GetFileVersionInfoW}));
-						auto verQueryValueW = mixin(dynamicallyLink!(q{versionDLL}, q{VerQueryValueW}));
-
-						if ((getFileVersionInfoW != null) & (verQueryValueW != null))
+						if (getFileVersionInfoW(stringBuffer.ptr, ignored, versionInfo.length, versionInfo.ptr))
 						{
-							ubyte[2048] versionInfo = void;
-							uint ignored = void;
+							void* value = void;
+							uint valueSize = void;
 
-							if (getFileVersionInfoW(stringBuffer.ptr, ignored, versionInfo.length, versionInfo.ptr))
+							if (verQueryValueW(versionInfo.ptr, `\`, &value, &valueSize))
 							{
-								void* value = void;
-								uint valueSize = void;
-
-								if (verQueryValueW(versionInfo.ptr, `\`, &value, &valueSize))
+								if ((cast(const(VS_FIXEDFILEINFO)*) value).dwFileVersionMS >= 0x0001_0004)
 								{
-									if ((cast(const(VS_FIXEDFILEINFO)*) value).dwFileVersionMS >= 0x0001_0004)
+									if (verQueryValueW(versionInfo.ptr, `\StringFileInfo\080904b0\LegalCopyright`, &value, &valueSize))
 									{
-										if (verQueryValueW(versionInfo.ptr, `\StringFileInfo\080904b0\LegalCopyright`, &value, &valueSize))
+										if (valueSize == 71)
 										{
-											if (valueSize == 71)
+											const(wchar)* c = cast(const(wchar)*) value;
+
+											if ((c[14] == '2') & (c[15] == '0') & (c[16] == '2') & (c[17] == '5'))
 											{
-												const(wchar)* c = cast(const(wchar)*) value;
-
-												if ((c[14] == '2') & (c[15] == '0') & (c[16] == '2') & (c[17] == '5'))
+												if (c[18] == ' ')
 												{
-													if (c[18] == ' ')
-													{
-														enum string ughMessage = (
-															  "An unofficial fork of S.L.A.C.K. is present in the \"Data\\DLLPlugins\" folder, this will cause a version-mismatch error.\r\n\r\n"
-															~ "This fork has gone by the names \"Faster Loadin' 'n' Savin'\", and \"Save and Load Accelerator for SKSE Cosaves - S.L.A.C.K. (Continued)\".\r\n\r\n"
-															~ "You should disable the fork in your mod manager."
-														);
+													enum string ughMessage = (
+														  "An unofficial fork of S.L.A.C.K. is present in the \"Data\\DLLPlugins\" folder, this will cause a version-mismatch error.\r\n\r\n"
+														~ "This fork has gone by the names \"Faster Loadin' 'n' Savin'\", and \"Save and Load Accelerator for SKSE Cosaves - S.L.A.C.K. (Continued)\".\r\n\r\n"
+														~ "You should disable the fork in your mod manager."
+													);
 
-														message = ughMessage;
-													}
+													message = ughMessage;
 												}
 											}
 										}
@@ -168,9 +168,9 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 							}
 						}
 					}
-
-					reportErrorToUser(message);
 				}
+
+				reportErrorToUser(message);
 			}
 		}
 	}
@@ -319,40 +319,16 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 
 		if ((skseDLL = cast(ubyte*) GetModuleHandleW(skseDLLName)) == null)
 		{
-			static if (shouldUseDLLNotifications)
-			{
-				error = global.linked.LdrRegisterDllNotification(
-					0,
-					&dllRegistrationNotificationHandler!(),
-					null,
-					&global.dllRegistrationNotificationCookie
-				);
+			enum wstring missingDLLMessage = (
+				  "The SKSE64 DLL could not be found.\r\n"
+				~ "This usually indicates that SKSE's loader was not used to launch to game.\r\n\r\n"
+				~ "If you use the Vortex mod manager, please try disabling and then re-enabling \"Skyrim Script Extender 64\" as the default-launcher/primary-tool in the \"Tools\" section/page.\r\n\r\n"
+				~ "Otherwise, you may need to set, or change, the value of the \"SKSEDLLName\" setting in the \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini\" file.\r\n"
+			);
 
-				if (error)
-				{
-					reportErrorToUser(
-						stringBuffer,
-						"The DLL-registration-notification-handler could not be installed.",
-						getLastError
-					);
-					return false;
-				}
+			reportErrorToUser(stringBuffer, missingDLLMessage, hresultFromLastError(getLastError));
 
-				return true;
-			}
-			else
-			{
-				enum wstring missingDLLMessage = (
-					  "The SKSE64 DLL could not be found.\r\n"
-					~ "This usually indicates that SKSE's loader was not used to launch to game.\r\n\r\n"
-					~ "If you use the Vortex mod manager, please try disabling and then re-enabling \"Skyrim Script Extender 64\" as the default-launcher/primary-tool in the \"Tools\" section/page.\r\n\r\n"
-					~ "Otherwise, you may need to set, or change, the value of the \"SKSEDLLName\" setting in the \"!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini\" file.\r\n"
-				);
-
-				reportErrorToUser(stringBuffer, missingDLLMessage, hresultFromLastError(getLastError));
-
-				return false;
-			}
+			return false;
 		}
 
 		return setUpEverythingWithSKSEDLL(stringBuffer, skseDLL);
@@ -605,31 +581,8 @@ allocatedSKSEskseAdjacentMemory:
 		global.addressOf.sksePluginFilePathCall = sections.text.ptr + skse64Offsets.pluginFilePathCall;
 	}
 
-	static if (expectedSKSE64Version < 0x02_02_007_0)
-	{
-		global.addressOf.findDLLPluginsCall = sections.text.ptr + skse64Offsets.findDLLPluginsCall;
-	}
-
 	ubyte* code = cast(ubyte*) skseAdjacentMemory;
 	ubyte* c = code;
-
-	static if (expectedSKSE64Version < 0x02_02_007_0)
-	{
-		ubyte* findDLLPluginsHook = c;
-
-		const(ubyte)* findDLLPlugins = x86TargetOf!5(global.addressOf.findDLLPluginsCall);
-
-		*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 5, 4); *c++ = 32;              /+ sub rsp, 32 +/
-		c += c.writeCallOf(cast(const(ubyte)*) &setUpBeforeSKSEPluginsAreLoaded); /+ call setUpBeforeSKSEPluginsAreLoaded +/
-		*c++ = REX.W; *c++ = 0x83; *c++ = modRM(3, 0, 4); *c++ = 32;              /+ add rsp, 32 +/
-		c.writeNearJumpTo(findDLLPlugins); c += 5;                                /+ jmp findDLLPlugins +/
-
-		withCodeRegionMadeWritable(
-			global.addressOf.findDLLPluginsCall,
-			5,
-			(scope ubyte* a, size_t s) {a.writeDirectCallOf(findDLLPluginsHook);}
-		);
-	}
 
 	version (SLACKVerificationMode)
 	{
@@ -812,24 +765,14 @@ allocatedSKSEskseAdjacentMemory:
 
 	FlushInstructionCache(thisProcess, code, 4.KB);
 
-	FlushInstructionCache(thisProcess, global.addressOf.findDLLPluginsCall, 5);
-
-	static if (expectedSKSE64Version >= 0x02_02_007_0)
-	{
-		setUpBeforeSKSEPluginsAreLoaded([]);
-	}
+	setUpBeforeSKSEPluginsAreLoaded;
 
 	return true;
 }
 
 
-void setUpBeforeSKSEPluginsAreLoaded (mixin(expectedSKSE64Version >= 0x02_02_007_0 ? q{void[0]} : q{ulong}) rcx) nothrow @nogc
+void setUpBeforeSKSEPluginsAreLoaded () nothrow @nogc
 {
-	static if (expectedSKSE64Version < 0x02_02_007_0)
-	{
-		pragma(inline, false);
-	}
-
 	alias Config = ConfigurationLongLived.Flags;
 
 	SerialisationProvider* serialisationProvider = cast(SerialisationProvider*) (
@@ -886,13 +829,6 @@ void setUpBeforeSKSEPluginsAreLoaded (mixin(expectedSKSE64Version >= 0x02_02_007
 					}
 				}
 			}
-		);
-	}
-
-	static if (expectedSKSE64Version < 0x02_02_007_0)
-	{
-		__ir_pure!(`call void asm sideeffect inteldialect "", "{rcx}" (i64 %0)`, void)(
-			rcx
 		);
 	}
 }
