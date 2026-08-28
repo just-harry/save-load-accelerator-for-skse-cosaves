@@ -549,3 +549,197 @@ replacementCharacter:
 	*w++ = 0xFFFD;
 	goto next;
 }
+
+
+dchar utf16ToUTF8 (
+	scope const(wchar)** utf16,
+	scope const(wchar)* endOfUTF16,
+	scope char** utf8,
+	scope const(char)* endOfUTF8
+) @trusted pure nothrow @nogc
+{
+	static if (x86X && LDC)
+	{
+		import ldc.gccbuiltins_x86 : __builtin_ia32_packuswb128, __builtin_ia32_pmovmskb128;
+
+		enum size_t byteWidth = 16;
+		alias movmsk = __builtin_ia32_pmovmskb128;
+		alias packuswb = __builtin_ia32_packuswb128;
+		alias Mask = ushort;
+
+		enum bool usingSIMD = true;
+	}
+	else
+	{
+		enum bool usingSIMD = false;
+	}
+
+	dchar pendingCodePoint = cast(dchar) -1;
+
+	const(wchar)* utf16SIMDLimit = endOfUTF16 - 8;
+	const(char)* utf8SIMDLimit = endOfUTF8 - 8;
+
+	const(wchar)* w = *utf16;
+	char* c = *utf8;
+
+	static if (usingSIMD)
+	{
+		alias V = __vector(short[8]);
+		alias ByteV = __vector(byte[16]);
+	next:
+		if ((c <= utf8SIMDLimit) & (w <= utf16SIMDLimit))
+		{
+			V ww = loadVector!V(cast(const(short)*) w);
+			V zero = 0;
+
+			V nonASCIIBits = ww >>> 7;
+			uint nonASCIIMask = movmsk(cast(ByteV) (nonASCIIBits != zero));
+
+			if (nonASCIIMask == 0)
+			{
+				/+ If it's just ASCII (spoiler alert--it is), then we'll
+				   blit the UTF-16 to UTF-8 via PACKUSWB. +/
+
+				V whatever = void;
+				V ascii = cast(V) packuswb(ww, whatever);
+				ulong bytes = (cast(__vector(ulong[2])) ascii).array[0];
+
+				*cast(Unaligned!ulong*) c = bytes;
+
+				w += 8;
+				c += 8;
+
+				goto next;
+			}
+
+			/+ Otherwise if it's not just ASCII we'll blit whatever ASCII we can
+			   and then proceed with the usual scalar logic. +/
+
+			uint bix = nonASCIIMask.leastSetBitIndex!(No.definedForZero) >>> 1;
+
+			while (bix--)
+			{
+				*c++ = cast(char) *w++;
+			}
+
+			assert(w < endOfUTF16);
+			assert(c < endOfUTF8);
+
+			assert(*w >= 128);
+
+			goto handleNonASCIIScalarLead;
+		}
+	}
+	else
+	{
+	next:
+	}
+
+	if ((c >= endOfUTF8) | (w >= endOfUTF16))
+	{
+	finish:
+		*utf8 = c;
+		*utf16 = w;
+		return pendingCodePoint;
+	}
+handleScalarLead:
+	if (*w < 128)
+	{
+		*c++ = cast(ubyte) *w++;
+		goto next;
+	}
+handleNonASCIIScalarLead:
+	uint d = *w;
+
+	if ((d < 0xD800) | (d > 0xDFFF))
+	{
+		++w;
+
+		assert(d > 0x7F);
+
+		if (d <= 0x7FF)
+		{
+			if (endOfUTF8 - c < 2)
+			{
+				pendingCodePoint = d;
+				goto finish;
+			}
+
+			*c++ = cast(ubyte) (0b11000000 | (d >> 6));
+			*c++ = cast(ubyte) (0b10000000 | (d & 0b00111111));
+		}
+		else
+		{
+			assert(d <= 0xFFFF);
+
+			if (endOfUTF8 - c < 3)
+			{
+				pendingCodePoint = d;
+				goto finish;
+			}
+
+			*c++ = cast(ubyte) (0b11100000 | (d >> 12));
+			*c++ = cast(ubyte) (0b10000000 | ((d >> 6) & 0b00111111));
+			*c++ = cast(ubyte) (0b10000000 | (d & 0b00111111));
+		}
+
+		goto next;
+	}
+	else if (d <= 0xDBFF)
+	{
+		++w;
+
+		if (w == endOfUTF16)
+		{
+			goto replacementCharacter;
+		}
+
+		uint s = d;
+		d = *w;
+
+		++w;
+
+		if ((d < 0xDC00) | (d > 0xDFFF))
+		{
+			goto replacementCharacter;
+		}
+
+		d = (((s & 0b1111111111) << 10) | (d & 0b1111111111)) + 0x10000;
+
+		if (d <= 0x10FFFF)
+		{
+			if (endOfUTF8 - c < 4)
+			{
+				pendingCodePoint = d;
+				goto finish;
+			}
+
+			*c++ = cast(ubyte) (0b11110000 | (d >> 18));
+			*c++ = cast(ubyte) (0b10000000 | ((d >> 12) & 0b00111111));
+			*c++ = cast(ubyte) (0b10000000 | ((d >> 6) & 0b00111111));
+			*c++ = cast(ubyte) (0b10000000 | (d & 0b00111111));
+
+			goto next;
+		}
+		else
+		{
+			goto replacementCharacter;
+		}
+	}
+	else
+	{
+	replacementCharacter:
+		if (endOfUTF8 - c < 3)
+		{
+			pendingCodePoint = 0xFFFD;
+			goto finish;
+		}
+
+		*c++ = 0xEF;
+		*c++ = 0xBF;
+		*c++ = 0xBD;
+
+		goto next;
+	}
+}
+
