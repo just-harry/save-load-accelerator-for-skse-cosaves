@@ -1,6 +1,27 @@
 
 # Save & Load Accelerator for SKSE Cosaves: Changelog
 
+## Version 1.4.0 (2026-08-28)
+
+The sixteenth release of this plugin, the changes are as follows:
+- Version 2.3.1 of SKSE is now supported, for version 1.7.104 of Skyrim SE.
+- The error-friendly mode now does a better job of catching and suppressing errors. (Crashes when saving and loading the game should no longer occur.)
+- A notification is now shown in the top-left corner of the screen when an error is suppressed, to avoid silent corruption of the cosave. Additionally, a sound is played to draw your attention (the sound of a lockpick breaking, by default).
+- More information is logged to the console when an error is suppressed, to make it easier for mod authors to determine where the cause of an error may be. (The type, version, and size of the last read/written record is now logged, alongside the version of the plugin, and a miniature (would-be) crash log.)
+- The error messages for common error-codes now contain explanatory descriptions.
+- A warning is now displayed if an outdated version of S.L.A.C.K. is active at the same time as a newer version of S.L.A.C.K.. (Which is possible because v1.3.3-and-newer use SKSE's builtin (pre-)loader, whereas older versions used meh321's or Engine Fixes' preloader, and so the location of the DLL file is different.)
+- The outdated name for S.L.A.C.K.'s INI file has been updated in more error messages.
+- The alignment of timings logged to the console, when profiling is enabled, have been changed.
+- S.L.A.C.K. no longer attempts to patch anything if it is loaded, by chance, in the Creation Kit.
+- The time spent handling an exception thrown or caused by a plugin now counts towards the time measured as having been spent handling that plugin's callback.
+- Some micro-optimisations have been made to the code. (Very unlikely to effect a measurable change to performance, but the DLLs are smaller than they otherwise would be.)
+- For versions 1.6.1130-and-older of Skyrim SE, SSE Engine Fixes' SKSE64 Preloader is no longer required as SKSE64's builtin loader is used instead (for consistency between game versions; the wacky DLL file-name is sufficient to ensure S.L.A.C.K. is loaded sufficiently early).
+- In the hopes of avoiding future false-positive detections from anti-viruses (as v1.3.2 did for about a week), S.L.A.C.K.'s DLL files are now digitally signed.
+
+---
+
+The song recommendation for this release is ["ハッピーバースデーをもう一度" by Erino Yumiki](https://www.youtube.com/watch?v=LXMYrJsoPNk). (I couldn't make me mind up as to which musician's song I wanted to recommended; in the end I chose this one as today is the sixtieth birthday of a relative of mine :)
+
 ## Version 1.3.4 (2026-08-22)
 
 The fifteenth release of this plugin, the changes are as follows:
