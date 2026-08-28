@@ -33,16 +33,12 @@ Saves made with this plugin installed can be loaded without this plugin installe
 [size=4][b][u]Requirements[/u][/b][/size]
 [list]
 [*][url=https://skse.silverlock.org/]SKSE[/url] (duh).[/*]
-[*]For versions 2.2.6-and-older of SKSE: a DLL preloader; either the [url=https://www.nexusmods.com/skyrimspecialedition/mods/17230]"SSE Engine Fixes - SKSE64 Preloader"[/url], or the [url=https://www.nexusmods.com/skyrimspecialedition/mods/10546]"DLL Plugin Loader"[/url] will do.[/*]
 [/list]
 
 [size=4][b][u]Installation[/u][/b][/size]
-After ensuring that you are using at-least version 2.2.8 of SKSE, or that a DLL preloader is installed, this plugin can be installed like any other via your mod-manager of choice.
+This plugin can be installed like any other via your mod-manager of choice.
 
-The plugin will be installed correctly by default by all good mod-managers.
-When installed correctly, the path of the DLL relative to the game's folder will be either: "SKSE\Plugins\!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll" for versions 2.2.7-and-newer of SKSE, or "Data\DLLPlugins\!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.dll" for versions 2.2.6-and-older of SKSE.
-
-Also, please note that only the versions for Skyrim AE v1.7.99, Skyrim AE v1.6.1170 and Skyrim SE v1.5.97 have been tested by me, all other version are untested (but should work).
+Please note that only the versions for Skyrim AE v1.7.104, Skyrim AE v1.6.1170 and Skyrim SE v1.5.97 have been tested by me, all other version are untested (but should work).
 
 [size=4][b][u]Usage[/u][/b][/size]
 This plugin is active by default when it is installed.
@@ -115,6 +111,11 @@ The optimisation this plugin makes is similarly obvious: the file is read into m
 
 [size=4][b][u]Source-Code[/u][/b][/size]
 The source-code for this plugin is available at [url=https://github.com/just-harry/save-load-accelerator-for-skse-cosaves]https://github.com/just-harry/save-load-accelerator-for-skse-cosaves[/url].
+
+[size=4][b][u]Acknowledgements[/u][/b][/size]
+Ian Patterson, and everyone who has contributed to the Skyrim Script Extender, for making the source-code of SKSE publicly available, and for allowing its reuse.
+meh321 for Address Library, saving me from the fate of having to purchase the GOG version of Skyrim SE.
+Alan Tse for VR Address Library, saving me from the fate of having to purchase Skyrim VR.
 
 [size=4][b][u]Honourable Mentions[/u][/b][/size]
 On 2024-10-04 (over a year ago), GitHub user "intorr" submitted a [url=https://github.com/ianpatt/skse64/pull/44]pull-request to the SKSE project[/url] which speeds up the saving and loading of SKSE cosaves, via a delightfully simple implementation of a buffered file-stream.
