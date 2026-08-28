@@ -8,4 +8,5 @@ import game;
 
 enum string targetedGameTag = "ae1170";
 enum uint targetedGameVersion = 0x01_06_492_0;
+enum string targetedGameVersionString = "1.6.1170.0";
 
