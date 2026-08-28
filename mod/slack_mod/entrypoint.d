@@ -164,8 +164,7 @@ debug
 
 			const(char)* utf8 = fileName + fileNameOffset;
 			const(char)* utf8End = utf8 + fileNameLength;
-			dchar pendingCodePoint = cast(dchar) -1;
-			utf8ToUTF16(&utf8, utf8End, &s, end, &pendingCodePoint);
+			utf8ToUTF16(&utf8, utf8End, &s, end);
 		}
 		else
 		{
@@ -191,8 +190,7 @@ debug
 
 			const(char)* utf8 = message;
 			const(char)* utf8End = utf8 + messageLength;
-			dchar pendingCodePoint = cast(dchar) -1;
-			utf8ToUTF16(&utf8, utf8End, &s, end, &pendingCodePoint);
+			utf8ToUTF16(&utf8, utf8End, &s, end);
 
 			if (end - s >= 2)
 			{

@@ -340,14 +340,12 @@ trimEndOfLine:
 }
 
 
-void utf8ToUTF16 (
+dchar utf8ToUTF16 (
 	scope const(char)** utf8,
 	scope const(char)* endOfUTF8,
 	scope wchar** utf16,
-	scope const(wchar)* endOfUTF16,
-	scope dchar* pendingCodePoint
+	scope const(wchar)* endOfUTF16
 ) @trusted pure nothrow @nogc
-in (*pendingCodePoint > 0x10FFFF)
 {
 	static if (x86X && LDC)
 	{
@@ -364,6 +362,8 @@ in (*pendingCodePoint > 0x10FFFF)
 	{
 		enum bool usingSIMD = false;
 	}
+
+	dchar pendingCodePoint = cast(dchar) -1;
 
 	const(char)* utf8SIMDLimit = endOfUTF8 - 16;
 	const(wchar)* utf16SIMDLimit = endOfUTF16 - 16;
@@ -436,7 +436,7 @@ in (*pendingCodePoint > 0x10FFFF)
 	finish:
 		*utf8 = c;
 		*utf16 = w;
-		return;
+		return pendingCodePoint;
 	}
 handleScalarLead:
 	if (*c < 128)
@@ -514,7 +514,7 @@ handleNonASCIIScalarLead:
 
 		if (endOfUTF16 - w < 2)
 		{
-			*pendingCodePoint = codePoint;
+			pendingCodePoint = codePoint;
 			goto finish;
 		}
 

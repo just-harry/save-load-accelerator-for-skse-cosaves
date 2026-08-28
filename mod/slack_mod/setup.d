@@ -265,8 +265,7 @@ bool setUpEverything (scope ref wchar[512] stringBuffer) nothrow @nogc
 				const(char)* utf8End = transientConfiguration.skseDLLName.endOf;
 				wchar* utf16 = stringBuffer.ptr;
 				wchar* utf16End = stringBuffer.endOf - 1;
-				dchar pendingCodePoint = cast(dchar) -1;
-				utf8ToUTF16(&utf8, utf8End, &utf16, utf16End, &pendingCodePoint);
+				utf8ToUTF16(&utf8, utf8End, &utf16, utf16End);
 
 				if (utf8 < utf8End)
 				{
