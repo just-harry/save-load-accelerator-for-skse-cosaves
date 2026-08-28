@@ -1347,9 +1347,18 @@ version (SLACKVerificationMode)
 	{
 		SerialisationProvider* serialisationProvider = global.addressOf.globalSerialisationProvider;
 
-		typeof(SerialisationProvider.beginRecord) beginRecord = void;
-		typeof(SerialisationProvider.writeRecord) writeRecord = void;
-		typeof(SerialisationProvider.writeRecordData) writeRecordData = void;
+		typeof(SerialisationProvider.beginRecord) beginRecord = serialisationProvider.beginRecord;
+		typeof(SerialisationProvider.writeRecord) writeRecord = serialisationProvider.writeRecord;
+		typeof(SerialisationProvider.writeRecordData) writeRecordData = serialisationProvider.writeRecordData;
+
+		if (global.configuration.flags & ConfigurationLongLived.Flags.enableParallelSaving)
+		{
+			saveCosaveParallel;
+		}
+		else
+		{
+			saveCosaveSerial;
+		}
 
 		withRegionMadeWritable(
 			cast(ubyte*) serialisationProvider,
@@ -1358,15 +1367,14 @@ version (SLACKVerificationMode)
 			{
 				SerialisationProvider* serialisation = cast(SerialisationProvider*) a;
 
-				beginRecord = serialisation.beginRecord;
-				writeRecord = serialisation.writeRecord;
-				writeRecordData = serialisation.writeRecordData;
-
 				serialisation.beginRecord = global.addressOf.skseSerialisationBeginRecord;
 				serialisation.writeRecord = global.addressOf.skseSerialisationWriteRecord;
 				serialisation.writeRecordData = global.addressOf.skseSerialisationWriteRecordData;
 			}
 		);
+
+		std_string* cosavePath = global.addressOf.skseCosaveSavePath;
+		*(cosavePath.base + cosavePath.size - 1) = 'o';
 
 		(cast(void function () nothrow @nogc) global.addressOf.createSKSECosave)();
 
@@ -1382,18 +1390,6 @@ version (SLACKVerificationMode)
 				serialisation.writeRecordData = writeRecordData;
 			}
 		);
-
-		std_string* cosavePath = global.addressOf.skseCosaveSavePath;
-		*(cosavePath.base + cosavePath.size - 1) = 'a';
-
-		if (global.configuration.flags & ConfigurationLongLived.Flags.enableParallelSaving)
-		{
-			saveCosaveParallel;
-		}
-		else
-		{
-			saveCosaveSerial;
-		}
 	}
 }
 
