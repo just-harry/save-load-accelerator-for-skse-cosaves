@@ -369,6 +369,8 @@ bool setUpEverythingWithSKSEDLL (scope ref wchar[512] stringBuffer, scope ubyte*
 
 	assert(global.configuration.skseHooksAreRequired);
 
+	global.addressOf.skseDLL = skseDLL;
+
 	uint error = void;
 	const(wchar)[] errorMessage = void;
 

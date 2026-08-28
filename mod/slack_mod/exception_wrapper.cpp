@@ -1,17 +1,24 @@
 
 /* SPDX-LICENSE-IDENTIFIER: 0BSD */
 
+#include <excpt.h>
 
-bool call_throws_exception (void *argument, void (*call) (void *))
+
+
+
+
+void call_and_handle_exception (
+	void *argument,
+	void (*call) (void *),
+	int (*exceptionHandler) (void *context, const void *exception),
+	void *handlerContext
+)
 {
-	try
+	__try
 	{
 		call(argument);
-		return false;
 	}
-	catch (...)
-	{
-		return true;
-	}
+	__except (exceptionHandler(handlerContext, GetExceptionInformation()))
+	{}
 }
 

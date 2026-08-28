@@ -582,7 +582,7 @@ pragma(inline, true)
 DLLPlugin* dllPlugin () (DLLPluginIndex pluginIndex) nothrow @nogc
 in (
 	   pluginIndex < global.addressOf.loadedSKSEPlugins.size
-	/+ As a micro-optimisation in `pluginStringsFromSerialisationStateIndex`
+	/+ As a micro-optimisation throughout our code
 	   we calculate the address of the `DLLPlugin*` unconditionally,
 	   and branch on whether or not the sparse-index is 0 afterwards;
 	   we'll concede that special-case in this precondition to keep debug builds useful. +/
@@ -708,30 +708,18 @@ bool savePluginData (bool parallel = false) (
 		);
 	};
 
-	enum string call =
-	q{
-		bool exceptionWasThrown = false;
-
-		if (global.configuration.flags & ConfigurationLongLived.Flags.errorFriendlyMode)
-		{
-			exceptionWasThrown = callThrowsException(serialisationProvider, detaggedStateSaver);
-		}
-		else
-		{
-			detaggedStateSaver(serialisationProvider);
-		}
-	};
-
 	enum string exceptionErrorMessages =
 	q{
 		static if (parallel) acquireConsolePrintingLock;
 
 		logDetailsAfterCatchingException(
+			exception,
 			strings,
 			pluginDataOffset,
 			pluginState,
 			startOfPluginData,
 			pluginState.recordCount != 0 ? pluginState.currentRecordHeader : unaligned(&global.saveLoad.nullCosaveRecordHeader),
+			sparseIndex,
 			"A SKSE plugin threw or caused an exception whilst saving to the cosave. That plugin's data in the cosave may be corrupt.",
 			"Record count",
 			"written",
@@ -739,6 +727,27 @@ bool savePluginData (bool parallel = false) (
 
 		static if (parallel) releaseConsolePrintingLock;
 	};
+
+	enum string call (string exceptionHandling) =
+	`
+		if (global.configuration.flags & ConfigurationLongLived.Flags.errorFriendlyMode)
+		{
+			callAndHandleException(
+				serialisationProvider,
+				detaggedStateSaver,
+				(scope const(EXCEPTION_POINTERS)* exception)
+				{
+					` ~ exceptionHandling ~ `
+					mixin(exceptionErrorMessages);
+					return EXCEPTION_EXECUTE_HANDLER;
+				}
+			);
+		}
+		else
+		{
+			detaggedStateSaver(serialisationProvider);
+		}
+	`;
 
 	mixin(setUpCall);
 
@@ -757,43 +766,41 @@ bool savePluginData (bool parallel = false) (
 		{
 			pragma(inline, false);
 
-			mixin(setUpCall);
-
-			ulong before = void;
-			RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &before);
-
-			mixin(call);
-
-			ulong after = void;
-			RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &after);
-
-			double duration = cast(double) (after - before) * global.performanceFrequencyMillisecondMultiplier;
-
 			auto strings = pluginStringsFromSerialisationStateIndex(sparseIndex);
 
 			const(ParallelSaveLoadThreadStack)* threadStack = ParallelSaving.threadStack;
 			uint threadIndex = threadStack.threadIndex;
 
-			if (exceptionWasThrown.llvm_expect(false))
-			{
-				static if (parallel)
-				{
-					global.anyPluginCosaveHandlerThrewAnException.atomicStore!(MemoryOrder.rel)(true);
-					global.unrecoverableErrorsOccurred.atomicStore!(MemoryOrder.rel)(true);
+			mixin(setUpCall);
 
-					const(ubyte)* cosaveBufferPartition = global.saveLoad.parallel.cosaveBuffer.baseOf(threadIndex);
-					uint pluginDataOffset = cast(uint) (threadStack.pluginState.head - cosaveBufferPartition);
-				}
-				else
-				{
-					global.anyPluginCosaveHandlerThrewAnException = true;
-					global.unrecoverableErrorsOccurred = true;
+			ulong before = void;
+			RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &before);
 
-					uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
-				}
+			mixin(
+				call!(
+				q{
+					static if (parallel)
+					{
+						global.anyPluginCosaveHandlerThrewAnException.atomicStore!(MemoryOrder.rel)(true);
+						global.unrecoverableErrorsOccurred.atomicStore!(MemoryOrder.rel)(true);
 
-				mixin(exceptionErrorMessages);
-			}
+						const(ubyte)* cosaveBufferPartition = global.saveLoad.parallel.cosaveBuffer.baseOf(threadIndex);
+						uint pluginDataOffset = cast(uint) (threadStack.pluginState.head - cosaveBufferPartition);
+					}
+					else
+					{
+						global.anyPluginCosaveHandlerThrewAnException = true;
+						global.unrecoverableErrorsOccurred = true;
+
+						uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
+					}
+				})
+			);
+
+			ulong after = void;
+			RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &after);
+
+			double duration = cast(double) (after - before) * global.performanceFrequencyMillisecondMultiplier;
 
 			static if (__traits(compiles, strings.filePath))
 			{
@@ -844,30 +851,28 @@ bool savePluginData (bool parallel = false) (
 	}
 	else
 	{
-		mixin(call);
+		mixin(
+			call!(
+			q{
+				static if (parallel)
+				{
+					global.anyPluginCosaveHandlerThrewAnException.atomicStore!(MemoryOrder.rel)(true);
+					global.unrecoverableErrorsOccurred.atomicStore!(MemoryOrder.rel)(true);
 
-		if (exceptionWasThrown.llvm_expect(false))
-		{
-			static if (parallel)
-			{
-				global.anyPluginCosaveHandlerThrewAnException.atomicStore!(MemoryOrder.rel)(true);
-				global.unrecoverableErrorsOccurred.atomicStore!(MemoryOrder.rel)(true);
+					const(ubyte)* cosaveBufferPartition = global.saveLoad.parallel.cosaveBuffer.baseOf(threadIndex);
+					uint pluginDataOffset = cast(uint) (pluginState.head - cosaveBufferPartition);
+				}
+				else
+				{
+					global.anyPluginCosaveHandlerThrewAnException = true;
+					global.unrecoverableErrorsOccurred = true;
 
-				const(ubyte)* cosaveBufferPartition = global.saveLoad.parallel.cosaveBuffer.baseOf(threadIndex);
-				uint pluginDataOffset = cast(uint) (pluginState.head - cosaveBufferPartition);
-			}
-			else
-			{
-				global.anyPluginCosaveHandlerThrewAnException = true;
-				global.unrecoverableErrorsOccurred = true;
+					uint pluginDataOffset = cast(uint) (pluginState.head - global.saveLoad.cosaveFileBuffer.base);
+				}
 
-				uint pluginDataOffset = cast(uint) (pluginState.head - global.saveLoad.cosaveFileBuffer.base);
-			}
-
-			auto strings = pluginStringsFromSerialisationStateIndex(sparseIndex);
-
-			mixin(exceptionErrorMessages);
-		}
+				auto strings = pluginStringsFromSerialisationStateIndex(sparseIndex);
+			})
+		);
 	}
 
 	*endOfData = pluginState.head;
@@ -1915,33 +1920,42 @@ void loadCosaveSerial () nothrow @nogc
 
 		if (plugin.stateLoader != null)
 		{
-			enum string call =
-			q{
-				bool exceptionWasThrown = false;
-
-				if (global.configuration.flags & ConfigurationLongLived.Flags.errorFriendlyMode)
-				{
-					exceptionWasThrown = callThrowsException(global.addressOf.globalSerialisationProvider, plugin.stateLoader);
-				}
-				else
-				{
-					plugin.stateLoader(global.addressOf.globalSerialisationProvider);
-				}
-			};
-
 			enum string exceptionErrorMessages =
 			q{
 				logDetailsAfterCatchingException(
+					exception,
 					strings,
 					pluginDataOffset,
 					&global.saveLoad.serial.pluginState,
 					global.saveLoad.serial.pluginState.head,
 					global.saveLoad.serial.lastLoadedRecordHeader,
+					sparseIndex,
 					"A SKSE plugin threw or caused an exception whilst loading from the cosave. That plugin's current state may be invalid.",
 					"Remaining record count",
 					"read",
 				);
 			};
+
+			enum string call (string exceptionHandling) =
+			`
+				if (global.configuration.flags & ConfigurationLongLived.Flags.errorFriendlyMode)
+				{
+					callAndHandleException(
+						global.addressOf.globalSerialisationProvider,
+						plugin.stateLoader,
+						(scope const(EXCEPTION_POINTERS)* exception)
+						{
+							` ~ exceptionHandling ~ `
+							mixin(exceptionErrorMessages);
+							return EXCEPTION_EXECUTE_HANDLER;
+						}
+					);
+				}
+				else
+				{
+					plugin.stateLoader(global.addressOf.globalSerialisationProvider);
+				}
+			`;
 
 			if ((global.configuration.flags & ConfigurationLongLived.Flags.profileLoading).llvm_expect(0))
 			{
@@ -1950,27 +1964,26 @@ void loadCosaveSerial () nothrow @nogc
 				{
 					pragma(inline, false);
 
+					size_t sparseIndex = plugin - global.addressOf.cosaveAwarePlugins.base;
+					auto strings = pluginStringsFromSerialisationStateIndex(sparseIndex);
+
 					ulong before = void;
 					RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &before);
 
-					mixin(call);
+					mixin(
+						call!(
+						q{
+							global.anyPluginCosaveHandlerThrewAnException = true;
+							global.unrecoverableErrorsOccurred = true;
+
+							uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
+						})
+					);
 
 					ulong after = void;
 					RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &after);
 
 					double duration = cast(double) (after - before) * global.performanceFrequencyMillisecondMultiplier;
-
-					auto strings = pluginStringsFromSerialisationStateIndex(plugin - global.addressOf.cosaveAwarePlugins.base);
-
-					if (exceptionWasThrown.llvm_expect(false))
-					{
-						global.anyPluginCosaveHandlerThrewAnException = true;
-						global.unrecoverableErrorsOccurred = true;
-
-						uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
-
-						mixin(exceptionErrorMessages);
-					}
 
 					static if (__traits(compiles, strings.filePath))
 					{
@@ -1996,19 +2009,18 @@ void loadCosaveSerial () nothrow @nogc
 			}
 			else
 			{
-				mixin(call);
+				mixin(
+					call!(
+					q{
+						global.anyPluginCosaveHandlerThrewAnException = true;
+						global.unrecoverableErrorsOccurred = true;
 
-				if (exceptionWasThrown.llvm_expect(false))
-				{
-					global.anyPluginCosaveHandlerThrewAnException = true;
-					global.unrecoverableErrorsOccurred = true;
+						uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
 
-					uint pluginDataOffset = cast(uint) (global.saveLoad.serial.pluginState.head - global.saveLoad.cosaveFileBuffer.base);
-
-					auto strings = pluginStringsFromSerialisationStateIndex(plugin - global.addressOf.cosaveAwarePlugins.base);
-
-					mixin(exceptionErrorMessages);
-				}
+						size_t sparseIndex = plugin - global.addressOf.cosaveAwarePlugins.base;
+						auto strings = pluginStringsFromSerialisationStateIndex(sparseIndex);
+					})
+				);
 			}
 		}
 
@@ -2021,7 +2033,8 @@ void loadCosaveSerial () nothrow @nogc
 		{
 			const(ubyte)* pluginData = cast(const(ubyte)*) pluginHeader + Cosave.DLLPluginHeader.sizeof;
 
-			auto strings = pluginStringsFromSerialisationStateIndex(plugin - global.addressOf.cosaveAwarePlugins.base);
+			size_t sparseIndex = plugin - global.addressOf.cosaveAwarePlugins.base;
+			auto strings = pluginStringsFromSerialisationStateIndex(sparseIndex);
 
 			static if (__traits(compiles, strings.filePath))
 			{
@@ -2146,11 +2159,13 @@ version (SLACKVerificationMode)
 
 @optStrategy("minsize")
 void logDetailsAfterCatchingException (
+	scope const(EXCEPTION_POINTERS)* exception,
 	scope ref const(typeof(pluginStringsFromSerialisationStateIndex(0))) strings,
 	uint physicalOffset,
 	scope const(SaveLoadPluginState)* pluginState,
 	scope const(ubyte)* startOfPluginData,
 	scope const(Unaligned!(Cosave.RecordHeader))* recordHeader,
+	size_t sparseIndex,
 	scope const(char)* description,
 	scope const(char)* recordCountLabel,
 	scope const(char)* recordVerbPastTense,
@@ -2203,6 +2218,209 @@ void logDetailsAfterCatchingException (
 			recordHeader.schemaVersion,
 			cast(uint) (cast(size_t) pluginState.head - cast(size_t) recordHeader)
 		);
+	}
+
+	const(DLLPlugin)* dllPlugin = (cast(DLLPluginIndex) (sparseIndex - 1)).dllPlugin;
+
+	uint pluginVersion = expectedSKSE64Version;
+	const(ubyte)* dll = global.addressOf.skseDLL;
+
+	bool isSKSE = sparseIndex == 0;
+
+	if (!isSKSE)
+	{
+		pluginVersion = dllPlugin.metadata.pluginVersion;
+		dll = cast(const(ubyte)*) dllPlugin.dll;
+	}
+
+	auto dllDOS = cast(const(IMAGE_DOS_HEADER)*) dll;
+	auto dllPE = cast(const(IMAGE_NT_HEADERS64)*) (dll + dllDOS.e_lfanew);
+
+	const(VS_FIXEDFILEINFO)* versionInfo = findFixedVersionInfo(dll, dllPE);
+
+	/+ Some plugin authors are awfully phlegmatic and don't update their version numbers! +/
+	uint timeDateStamp = dllPE.FileHeader.TimeDateStamp;
+
+	if (versionInfo != null && versionInfo.dwSignature == 0xFEEF04BD)
+	{
+		global.addressOf.skseConsolePrint(
+			">>>>>>>> | `%s`'s version | SKSE plugin version: 0x%08X | DLL TimeDateStamp: 0x%08X | DLL file version: %u.%u.%u.%u | DLL product version: %u.%u.%u.%u",
+			strings.name,
+			pluginVersion,
+			timeDateStamp,
+			versionInfo.dwFileVersionMS >>> 16,
+			cast(ushort) versionInfo.dwFileVersionMS,
+			versionInfo.dwFileVersionLS >>> 16,
+			cast(ushort) versionInfo.dwFileVersionLS,
+			versionInfo.dwProductVersionMS >>> 16,
+			cast(ushort) versionInfo.dwProductVersionMS,
+			versionInfo.dwProductVersionLS >>> 16,
+			cast(ushort) versionInfo.dwProductVersionLS,
+		);
+	}
+	else
+	{
+		global.addressOf.skseConsolePrint(
+			">>>>>>>> | `%s`'s version | SKSE plugin version: 0x%08X | DLL TimeDateStamp: 0x%08X",
+			strings.name,
+			pluginVersion,
+			timeDateStamp,
+		);
+	}
+
+	const(EXCEPTION_RECORD)* error = exception.ExceptionRecord;
+	uint errorCounter = 0;
+
+	do
+	{
+		global.addressOf.skseConsolePrint(
+			">>>>>>>> | Exception[%u] | Code: 0x%08X | Flags: 0x%08X | Argument Count: %u | Arguments: [%016X, %016X, %016X ,%016X]",
+			errorCounter,
+			error.ExceptionCode,
+			error.ExceptionFlags,
+			error.NumberParameters,
+			error.ExceptionInformation[0],
+			error.ExceptionInformation[1],
+			error.ExceptionInformation[2],
+			error.ExceptionInformation[3],
+		);
+
+		++errorCounter;
+		error = error.ExceptionRecord;
+	}
+	while (error != null);
+
+	const(CONTEXT)* context = exception.ContextRecord;
+
+	global.addressOf.skseConsolePrint(
+		">>>>>>>> | Thread context | RAX: 0x%016X | RCX: 0x%016X | RDX: 0x%016X | RBX: 0x%016X | RSP: 0x%016X | RBP: 0x%016X | RSI: 0x%016X | RDI: 0x%016X",
+		context.Rax, context.Rcx, context.Rdx, context.Rbx, context.Rsp, context.Rbp, context.Rsi, context.Rdi,
+	);
+
+	global.addressOf.skseConsolePrint(
+		">>>>>>>> | >>>>>>>>>>> |    R8: 0x%016X |    R9: 0x%016X | R10: 0x%016X | R11: 0x%016X | R12: 0x%016X | R13: 0x%016X | R14: 0x%016X | R15: 0x%016X",
+		context. R8, context. R9, context.R10, context.R11, context.R12, context.R13, context.R14, context.R15,
+	);
+
+	const(ubyte)* rip = cast(const(ubyte)*) context.Rip;
+
+	const(char)* dllName = null;
+	size_t difference = void;
+	uint displacement = void;
+	FoundImageInfo!char found = void;
+
+	found.dll = null;
+
+	if (
+		  (cast(size_t) rip >= cast(size_t) dll)
+		& ((difference = cast(size_t) rip - cast(size_t) dll) < dllPE.OptionalHeader.SizeOfImage)
+	)
+	{
+		displacement = cast(uint) difference;
+
+		static if (__traits(compiles, strings.filePath))
+		{
+			dllName = strings.filePath;
+		}
+		else
+		{
+			FoundImageInfo!char* f = &found;
+			f = findImageByContainedAddress(f, cast(size_t) rip);
+			dllName = f ? f.nameBuffer.ptr : cast(const(char)*) f;
+		}
+	}
+	else
+	{
+		const(ubyte)* exe = cast(const(ubyte)*) getPEB.ImageBaseAddress;
+		auto exeDOS = cast(const(IMAGE_DOS_HEADER)*) exe;
+		auto exePE = cast(const(IMAGE_NT_HEADERS64)*) (exe + dllDOS.e_lfanew);
+
+		if (
+			  (cast(size_t) rip >= cast(size_t) exe)
+			& ((difference = cast(size_t) rip - cast(size_t) exe) < exePE.OptionalHeader.SizeOfImage)
+		)
+		{
+			displacement = cast(uint) difference;
+			dllName = "SkyrimSE.exe";
+		}
+		else
+		{
+			FoundImageInfo!char* f = &found;
+			f = findImageByContainedAddress(f, cast(size_t) rip);
+			dllName = f ? f.nameBuffer.ptr : cast(const(char)*) f;
+			displacement = found.displacement;
+		}
+	}
+
+	char[48] instructionHex = void;
+	char* c = instructionHex.ptr;
+
+	foreach (index; 0 .. 16)
+	{
+		rip[index].asHexInto!true(c[0 .. 2]);
+		c += 2;
+		*c++ = ' ';
+	}
+
+	*--c = '\0';
+
+	if (dllName != null)
+	{
+		global.addressOf.skseConsolePrint(
+			">>>>>>>> | >>>>>>>>>>> | RIP: %s+0x%08x | Machine code at RIP: %s",
+			dllName,
+			displacement,
+			instructionHex.ptr
+		);
+	}
+	else
+	{
+		global.addressOf.skseConsolePrint(
+			">>>>>>>> | >>>>>>>>>>> | RIP: 0x%016X | Machine code at RIP: %s",
+			cast(size_t) rip,
+			instructionHex.ptr
+		);
+	}
+
+	enum string versionString = (
+		">>>>>>>> | Game version: " ~ targetedGameVersionString ~ " | SKSE version: " ~ expectedSKSE64VersionString
+	);
+
+	global.addressOf.skseConsolePrint(versionString.ptr);
+
+	if ((found.dll != null) & (found.dll != dll))
+	{
+		auto foundDOS = cast(const(IMAGE_DOS_HEADER)*) found.dll;
+		auto foundPE = cast(const(IMAGE_NT_HEADERS64)*) (found.dll + foundDOS.e_lfanew);
+
+		versionInfo = findFixedVersionInfo(found.dll, foundPE);
+
+		timeDateStamp = foundPE.FileHeader.TimeDateStamp;
+
+		if (versionInfo != null && versionInfo.dwSignature == 0xFEEF04BD)
+		{
+			global.addressOf.skseConsolePrint(
+				">>>>>>>> | `%s`'s version | DLL TimeDateStamp: 0x%08X | DLL file version: %u.%u.%u.%u | DLL product version: %u.%u.%u.%u",
+				found.nameBuffer.ptr,
+				timeDateStamp,
+				versionInfo.dwFileVersionMS >>> 16,
+				cast(ushort) versionInfo.dwFileVersionMS,
+				versionInfo.dwFileVersionLS >>> 16,
+				cast(ushort) versionInfo.dwFileVersionLS,
+				versionInfo.dwProductVersionMS >>> 16,
+				cast(ushort) versionInfo.dwProductVersionMS,
+				versionInfo.dwProductVersionLS >>> 16,
+				cast(ushort) versionInfo.dwProductVersionLS,
+			);
+		}
+		else
+		{
+			global.addressOf.skseConsolePrint(
+				">>>>>>>> | `%s`'s version | DLL TimeDateStamp: 0x%08X",
+				found.nameBuffer.ptr,
+				timeDateStamp,
+			);
+		}
 	}
 }
 

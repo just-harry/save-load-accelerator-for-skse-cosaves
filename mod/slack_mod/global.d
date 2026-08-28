@@ -94,6 +94,7 @@ struct ResolvedAddresses
 	ubyte* createSKSECosaveCall;
 	ubyte* restoreSKSECosaveCall;
 	extern(C) void function (scope const(char)* format, ...) nothrow @nogc skseConsolePrint;
+	const(ubyte)* skseDLL;
 
 	version (SLACKVerificationMode)
 	{
