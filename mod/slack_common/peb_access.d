@@ -29,6 +29,11 @@ version (Windows)
 		void* SubSystemData;
 		void* ProcessHeap;
 		RTL_CRITICAL_SECTION* FastPebLock;
+		ubyte[208] filler0;
+		RTL_CRITICAL_SECTION* LoaderLock;
+
+
+		static assert(LoaderLock.offsetof == (size_t.sizeof > 4 ? 272 : 160));
 	}
 
 
@@ -43,6 +48,20 @@ version (Windows)
 		void* EntryInProgress;
 		BOOLEAN ShutdownInProgress;
 		HANDLE ShutdownThreadId;
+	}
+
+
+	struct LDR_DATA_TABLE_ENTRY
+	{
+		LIST_ENTRY InLoadOrderLinks;
+		LIST_ENTRY InMemoryOrderLinks;
+		LIST_ENTRY InProgressLinks;
+		alias InInitializationOrderLinks = InProgressLinks;
+		void* DllBase;
+		void* EntryPoint;
+		uint SizeOfImage;
+		UNICODE_STRING FullDllName;
+		UNICODE_STRING BaseDllName;
 	}
 
 

@@ -126,6 +126,10 @@ version (Windows)
 	extern(Windows) NTSTATUS NtQueryInformationThread (scope HANDLE ThreadHandle, THREADINFOCLASS ThreadInformationClass, scope void* ThreadInformation, uint ThreadInformationLength, scope uint* ReturnLength) @system nothrow @nogc;
 
 
+	extern(Windows) NTSTATUS RtlEnterCriticalSection (scope RTL_CRITICAL_SECTION* CriticalSection) @trusted nothrow @nogc;
+	extern(Windows) NTSTATUS RtlLeaveCriticalSection (scope RTL_CRITICAL_SECTION* CriticalSection) @trusted nothrow @nogc;
+
+
 	extern(Windows) uint GetActiveProcessorCount (ushort groupNumber) @safe nothrow @nogc;
 
 

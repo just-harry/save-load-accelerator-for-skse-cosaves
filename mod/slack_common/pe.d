@@ -7,6 +7,9 @@ module slack_common.pe;
 import ldc.attributes : optStrategy;
 
 import slack_common.bindings;
+import slack_common.memory;
+import slack_common.peb_access;
+import slack_common.text;
 
 
 struct PESections
@@ -67,6 +70,108 @@ size_t findSectionsOfPE64 (scope void* image, scope PESections* sections) @trust
 	return missing;
 }
 
+
+struct FoundImageInfo (Char)
+{
+	void* dll;
+	uint displacement;
+	uint nameLength;
+	Char[MAX_PATH] nameBuffer = 0;
+
+
+	pragma(inline, true)
+	inout(Char)[] name () () inout @property return scope
+	{
+		return this.nameBuffer[0 .. this.nameLength];
+	}
+}
+
+
+FoundImageInfo!Char* findImageByContainedAddress (Char) (
+	return scope FoundImageInfo!Char* found,
+	size_t address
+) nothrow @nogc
+{
+	PEB* peb = getPEB;
+
+	RtlEnterCriticalSection(peb.LoaderLock);
+	scope(exit) RtlLeaveCriticalSection(peb.LoaderLock);
+
+	return findImageByContainedAddress(found, address, getPEB.Ldr.InMemoryOrderModuleList.Flink);
+}
+
+
+FoundImageInfo!Char* findImageByContainedAddress (Char) (
+	return scope FoundImageInfo!Char* found,
+	size_t address,
+	scope const(LIST_ENTRY)* initialLink
+) nothrow @nogc
+{
+	const(LIST_ENTRY)* link = initialLink;
+
+	do
+	{
+		prefetchData(link.Flink);
+
+		auto entry = cast(LDR_DATA_TABLE_ENTRY*) (cast(size_t) link - LDR_DATA_TABLE_ENTRY.InMemoryOrderLinks.offsetof);
+
+		void* dll = entry.DllBase;
+		size_t displacement = void;
+
+		if (
+			  (address >= cast(size_t) dll)
+			& ((displacement = address - cast(size_t) dll) < entry.SizeOfImage)
+		)
+		{
+			static assert(entry.SizeOfImage.sizeof == 4);
+
+			found.displacement = cast(uint) displacement;
+			found.dll = dll;
+
+			const(wchar)* path = entry.FullDllName.Buffer;
+			const(wchar)* end = cast(const(wchar)*) (cast(size_t) path + entry.FullDllName.Length);
+			const(wchar)* p = end;
+
+			for (; p > path;)
+			{
+				--p;
+				if (*p == '\\') {++p; break;}
+			}
+
+			const(wchar)* name = p;
+			uint nameLength = cast(uint) (end - name);
+
+			static if (Char.sizeof == 1)
+			{
+				const(wchar)* utf16 = name;
+				const(wchar)* utf16End = name + nameLength;
+				char* utf8 = found.nameBuffer.ptr;
+				char* utf8End = found.nameBuffer.endOf - 1;
+				utf16ToUTF8(&utf16, utf16End, &utf8, utf8End);
+				*utf8 = '\0';
+
+				found.nameLength = cast(uint) (utf8 - found.nameBuffer.ptr);
+			}
+			else
+			{
+				static assert(Char.sizeof == 2);
+
+				nameLength = nameLength <= MAX_PATH - 1 ? nameLength : MAX_PATH - 1;
+
+				found.nameLength = nameLength;
+				blit(found.nameBuffer.ptr, name, nameLength);
+				found.nameBuffer[nameLength] = '\0';
+			}
+
+			return found;
+		}
+
+		link = link.Flink;
+	}
+	while (link != initialLink);
+
+	return null;
+}
 
 
 @optStrategy("minsize")
