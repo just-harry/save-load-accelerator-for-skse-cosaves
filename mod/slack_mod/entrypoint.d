@@ -123,6 +123,10 @@ extern(C)
 pragma(inline, true)
 bool setupFromSKSELoad () (const(SKSE64Provider)* skse) nothrow @nogc
 {
+	if (skse.isCK)
+	{
+		return false;
+	}
 
 	wchar[512] stringBuffer = void;
 	uint skse64Version = skse.skse64Version;
