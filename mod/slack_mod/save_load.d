@@ -807,9 +807,10 @@ bool savePluginData (bool parallel = false) (
 				static if (parallel)
 				{
 					threadSafeSKSEConsolePrint(
-						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Plugin: %s [%s]",
+						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s [%s]",
 						threadIndex,
 						duration,
+						pluginState.recordCount,
 						strings.name,
 						strings.filePath
 					);
@@ -817,8 +818,9 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | Plugin save callback: %10.3f ms | Plugin: %s [%s]",
+						"S.L.A.C.K. | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s [%s]",
 						duration,
+						pluginState.recordCount,
 						strings.name,
 						strings.filePath
 					);
@@ -829,17 +831,19 @@ bool savePluginData (bool parallel = false) (
 				static if (parallel)
 				{
 					threadSafeSKSEConsolePrint(
-						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Plugin: %s",
+						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s",
 						threadIndex,
 						duration,
+						pluginState.recordCount,
 						strings.name
 					);
 				}
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | Plugin save callback: %10.3f ms | Plugin: %s",
+						"S.L.A.C.K. | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s",
 						duration,
+						pluginState.recordCount,
 						strings.name
 					);
 				}
@@ -1960,6 +1964,8 @@ void loadCosaveSerial () nothrow @nogc
 				{
 					pragma(inline, false);
 
+					uint purportedRecordCount = global.saveLoad.serial.pluginState.recordCount;
+
 					size_t sparseIndex = plugin - global.addressOf.cosaveAwarePlugins.base;
 					auto strings = pluginStringsFromSerialisationStateIndex(sparseIndex);
 
@@ -1981,11 +1987,14 @@ void loadCosaveSerial () nothrow @nogc
 
 					double duration = cast(double) (after - before) * global.performanceFrequencyMillisecondMultiplier;
 
+					uint actualRecordCount = purportedRecordCount - global.saveLoad.serial.pluginState.recordCount;
+
 					static if (__traits(compiles, strings.filePath))
 					{
 						global.addressOf.skseConsolePrint(
-							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Plugin: %s [%s]",
+							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Record count: %8u | Plugin: %s [%s]",
 							duration,
+							actualRecordCount,
 							strings.name,
 							strings.filePath
 						);
@@ -1993,8 +2002,9 @@ void loadCosaveSerial () nothrow @nogc
 					else
 					{
 						global.addressOf.skseConsolePrint(
-							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Plugin: %s",
+							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Record count: %8u | Plugin: %s",
 							duration,
+							actualRecordCount,
 							strings.name
 						);
 					}
