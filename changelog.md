@@ -1,6 +1,17 @@
 
 # Save & Load Accelerator for SKSE Cosaves: Changelog
 
+## Version 1.4.1 (2026-08-29)
+
+The seventeenth release of this plugin, the changes are as follows:
+- The top half of a register's value is no longer ignored when it is logged to the console following the occurrence of an exception in the error-friendly mode. (Such a schoolboy error. (Marring my efforts with silly mistakes is my speciality.))
+- S.L.A.C.K.'s version-number is now logged also when an exception is logged.
+- The number of records saved or loaded by a plugin is now logged when profiling is enabled.
+
+---
+
+The song recommendation for this release is ["Cirno's Perfect Math Class" by IOSYS](https://www.youtube.com/watch?v=V_bQNPG2OyE).
+
 ## Version 1.4.0 (2026-08-28)
 
 The sixteenth release of this plugin, the changes are as follows:
