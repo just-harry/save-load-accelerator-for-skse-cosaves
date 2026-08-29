@@ -46,7 +46,7 @@ BOOL dllEntrypoint (HINSTANCE hinstDLL, uint fdwReason, scope void* lpvReserved)
 extern(C)
 immutable(DLLPluginVersionMetadata) SKSEPlugin_Version = {
 	schemaVersion: DLLPluginVersionMetadata.SchemaVersion.v1,
-	pluginVersion: /+release-version+/0x01_04_000_0,
+	pluginVersion: /+release-version+/0x01_04_001_0,
 	name: "Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.)",
 	authorName: `"Just Harry"`,
 	emailAddress: "regarding__s_l_a_c_k_@harrygillanders.com",
@@ -61,7 +61,7 @@ bool SKSEPlugin_Query (scope const(SKSE64Provider)* skse, scope DLLPluginMetadat
 {
 	metadata.schemaVersion = metadata.SchemaVersion.v1;
 	metadata.name = "Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.)";
-	metadata.pluginVersion = /+release-version+/0x01_04_000_0;
+	metadata.pluginVersion = /+release-version+/0x01_04_001_0;
 	return !skse.isCK;
 }
 
@@ -155,7 +155,7 @@ uint SaveLoadAcceleratorForSKSECosaves_GetVersion () @safe pure nothrow @nogc
 extern(Windows)
 uint SaveLoadAcceleratorForSKSECosaves_GetReleaseVersion () @safe pure nothrow @nogc
 {
-	return /+release-version+/0x01_04_000_0;
+	return /+release-version+/0x01_04_001_0;
 }
 
 

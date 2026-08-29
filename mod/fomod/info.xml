@@ -2,7 +2,7 @@
 <fomod>
 	<Name>Save &amp; Load Accelerator for SKSE Cosaves (S.L.A.C.K.)</Name>
 	<Author>"Just Harry"</Author>
-	<Version MachineVersion="1.4.0">1.4.0</Version>
+	<Version MachineVersion="1.4.1">1.4.1</Version>
 	<Description>This plugin aims to make heavily-modded games save and load more quickly.</Description>
 	<Website>https://www.nexusmods.com/skyrimspecialedition/mods/163969</Website>
 	<Id>163969</Id>
