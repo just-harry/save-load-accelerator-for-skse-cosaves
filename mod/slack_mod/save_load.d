@@ -2270,7 +2270,7 @@ void logDetailsAfterCatchingException (
 	do
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | Exception[%u] | Code: 0x%08X | Flags: 0x%08X | Argument Count: %u | Arguments: [%016X, %016X, %016X ,%016X]",
+			">>>>>>>> | Exception[%u] | Code: 0x%08X | Flags: 0x%08X | Argument Count: %u | Arguments: [%016llX, %016llX, %016llX ,%016llX]",
 			errorCounter,
 			error.ExceptionCode,
 			error.ExceptionFlags,
@@ -2289,12 +2289,12 @@ void logDetailsAfterCatchingException (
 	const(CONTEXT)* context = exception.ContextRecord;
 
 	global.addressOf.skseConsolePrint(
-		">>>>>>>> | Thread context | RAX: 0x%016X | RCX: 0x%016X | RDX: 0x%016X | RBX: 0x%016X | RSP: 0x%016X | RBP: 0x%016X | RSI: 0x%016X | RDI: 0x%016X",
+		">>>>>>>> | Thread context | RAX: 0x%016llX | RCX: 0x%016llX | RDX: 0x%016llX | RBX: 0x%016llX | RSP: 0x%016llX | RBP: 0x%016llX | RSI: 0x%016llX | RDI: 0x%016llX",
 		context.Rax, context.Rcx, context.Rdx, context.Rbx, context.Rsp, context.Rbp, context.Rsi, context.Rdi,
 	);
 
 	global.addressOf.skseConsolePrint(
-		">>>>>>>> | >>>>>>>>>>> |    R8: 0x%016X |    R9: 0x%016X | R10: 0x%016X | R11: 0x%016X | R12: 0x%016X | R13: 0x%016X | R14: 0x%016X | R15: 0x%016X",
+		">>>>>>>> | >>>>>>>>>>> |    R8: 0x%016llX |    R9: 0x%016llX | R10: 0x%016llX | R11: 0x%016llX | R12: 0x%016llX | R13: 0x%016llX | R14: 0x%016llX | R15: 0x%016llX",
 		context. R8, context. R9, context.R10, context.R11, context.R12, context.R13, context.R14, context.R15,
 	);
 
@@ -2372,7 +2372,7 @@ void logDetailsAfterCatchingException (
 	else
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | >>>>>>>>>>> | RIP: 0x%016X | Machine code at RIP: %s",
+			">>>>>>>> | >>>>>>>>>>> | RIP: 0x%016llX | Machine code at RIP: %s",
 			cast(size_t) rip,
 			instructionHex.ptr
 		);
