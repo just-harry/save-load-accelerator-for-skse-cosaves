@@ -16,6 +16,8 @@ $AsPackedUIntDLiteral = '{0:X02}_{1:X02}_{2:X03}_{3:X01}' -f $Version.Major, $Ve
 
 sed -b -i $(if ($IsMacOS) {''}) -E -e "s/(Save & Load Accelerator for SKSE Cosaves v)\S+/\1$AsSemantic/" -- "$RootPath/mod/slack_common/user_interface.d"
 
+sed -b -i $(if ($IsMacOS) {''}) -E -e "s/(S.L.A.C.K. version: )[^`"]+/\1$AsSemantic/" -- "$RootPath/mod/slack_mod/save_load.d"
+
 sed -b -i $(if ($IsMacOS) {''}) -E -e "s/((FILE|PRODUCT)VERSION\s+)\S+/\1$AsRCLiteral/" -e "s/(`"(File|Product)Version`",\s*`")[^\]+/\1$AsRCString/" -- "$RootPath/mod/slack_mod/Save&LoadAcceleratorForSKSECosaves.rc"
 
 sed -b -i $(if ($IsMacOS) {''}) -E -e "s/(MachineVersion=`")[^`"]+/\1$AsSemantic/" -e "s:>[^<]+</Version>:>$AsSemantic</Version>:" -- "$RootPath/mod/fomod/info.xml"
