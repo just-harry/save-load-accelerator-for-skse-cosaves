@@ -1432,6 +1432,8 @@ NTSTATUS parallelSaveLoadThreadProcedureEntry () (scope void* contextPointer) no
 alias _parallelSaveLoadThreadProcedure = parallelSaveLoadThreadProcedure!();
 
 
+/+ `assumeUsed` is required for LDC (starting with v1.43.0) to emit this function when using LTO. +/
+@assumeUsed
 extern(System)
 noreturn parallelSaveLoadThreadProcedure () (scope void* contextPointer, scope ParallelSaveLoadThreadStack* threadStack) nothrow @nogc
 {
