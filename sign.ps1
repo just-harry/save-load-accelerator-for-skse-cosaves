@@ -21,7 +21,7 @@ Param
 			$RFC3161Server = 'http://ts.harica.gr',
 
 	[Parameter()]
-			$ReleaseTag = <#release-version#>'v1.4.1',
+			$ReleaseTag = <#release-version#>'v1.4.2',
 
 	[Parameter()]
 			<# I will forget to supply this switch. Hence the default. #>
