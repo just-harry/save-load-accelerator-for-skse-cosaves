@@ -649,7 +649,8 @@ bool savePluginData (bool parallel = false) (
 	scope SerialisationProvider.ProviderReceiver pluginStateSaver,
 	scope ubyte** endOfData,
 	uint sparseIndex,
-	uint threadIndex
+	uint threadIndex,
+	scope immutable(char)* serialSaveLogPadding = ""
 ) nothrow @nogc
 {
 	/+ We preemptively account for the plugin-header--
@@ -728,7 +729,8 @@ bool savePluginData (bool parallel = false) (
 			scope SerialisationProvider.ProviderReceiver pluginStateSaver,
 			uint sparseIndex,
 			scope const(SaveLoadPluginState)* pluginState,
-			scope const(ubyte)* startOfPluginData
+			scope const(ubyte)* startOfPluginData,
+			scope immutable(char)* serialSaveLogPadding
 		)
 		{
 			pragma(inline, false);
@@ -785,7 +787,8 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s [%s]",
+						"S.L.A.C.K. | %s | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s [%s]",
+						serialSaveLogPadding,
 						duration,
 						pluginState.recordCount,
 						strings.name,
@@ -808,7 +811,8 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s",
+						"S.L.A.C.K. | %s | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s",
+						serialSaveLogPadding,
 						duration,
 						pluginState.recordCount,
 						strings.name
@@ -818,7 +822,7 @@ bool savePluginData (bool parallel = false) (
 		}
 
 		/+ An exlined call to keep the branch short for when profiling is disabled. +/
-		profiledStateSaverCall(pluginStateSaver, sparseIndex, pluginState, startOfPluginData);
+		profiledStateSaverCall(pluginStateSaver, sparseIndex, pluginState, startOfPluginData, serialSaveLogPadding);
 	}
 	else
 	{
@@ -1112,7 +1116,7 @@ void saveCosaveParallel () nothrow @nogc
 
 		if ((plugin.stateSaver != null) & plugin.uniqueIDHasBeenAssigned)
 		{
-			if (savePluginData(&global.saveLoad.serial.pluginState, plugin.uniqueID, plugin.stateSaver, &endOfData, 0, 0))
+			if (savePluginData(&global.saveLoad.serial.pluginState, plugin.uniqueID, plugin.stateSaver, &endOfData, 0, 0, "Thread: N/A"))
 			{
 				++global.saveLoad.parallel.cosaveFilePluginsWithDataInCosaveCount;
 			}
