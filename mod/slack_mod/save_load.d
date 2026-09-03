@@ -50,39 +50,6 @@ import skse64.hacks.offsets;
 enum ulong specialStateSaverTag = ulong(1) << 62;
 
 
-extern(C++)
-class CosaveLoadingErrorNotificationDisplayer : GameEventHandler!MenuStatusChangeEvent
-{
-	override EventContinuance handle (scope MenuStatusChangeEvent* event, scope EventPump!MenuStatusChangeEvent* pump) scope nothrow @nogc
-	{
-		if (event.menuIsClosing)
-		{
-			if (event.menuName is (*based!internedMenuNames).faderMenu)
-			{
-				global.saveLoad.pendingCosaveLoadingErrorFingerprint = 0;
-
-				(*based!deregisterGameEventHandler)(
-					&(*based!gameMenuState).menuStatusChangeEventPump(),
-					cast(void*) global.saveLoad.cosaveLoadingErrorNotificationDisplayer
-				);
-
-				errorNotificationEpilogue!(
-					"loading",
-					ConfigurationLongLived.Flags.showLoadingErrorNotifications,
-					ConfigurationLongLived.Flags.showLoadingWarningNotifications,
-					ConfigurationLongLived.SoundEffect.loadingError,
-					ConfigurationLongLived.SoundEffect.loadingWarning,
-				)(
-					global.saveLoad.pendingCosaveLoadingErrorWasUnrecoverable
-				);
-			}
-		}
-
-		return EventContinuance.go;
-	}
-}
-
-
 struct SaveLoadState
 {
 	Cosave.RecordHeader nullCosaveRecordHeader;
@@ -2161,6 +2128,39 @@ version (SLACKVerificationMode)
 			endOfFile.sizeof,
 			FILE_INFORMATION_CLASS.FileEndOfFileInformation
 		);
+	}
+}
+
+
+extern(C++)
+class CosaveLoadingErrorNotificationDisplayer : GameEventHandler!MenuStatusChangeEvent
+{
+	override EventContinuance handle (scope MenuStatusChangeEvent* event, scope EventPump!MenuStatusChangeEvent* pump) scope nothrow @nogc
+	{
+		if (event.menuIsClosing)
+		{
+			if (event.menuName is (*based!internedMenuNames).faderMenu)
+			{
+				global.saveLoad.pendingCosaveLoadingErrorFingerprint = 0;
+
+				(*based!deregisterGameEventHandler)(
+					&(*based!gameMenuState).menuStatusChangeEventPump(),
+					cast(void*) global.saveLoad.cosaveLoadingErrorNotificationDisplayer
+				);
+
+				errorNotificationEpilogue!(
+					"loading",
+					ConfigurationLongLived.Flags.showLoadingErrorNotifications,
+					ConfigurationLongLived.Flags.showLoadingWarningNotifications,
+					ConfigurationLongLived.SoundEffect.loadingError,
+					ConfigurationLongLived.SoundEffect.loadingWarning,
+				)(
+					global.saveLoad.pendingCosaveLoadingErrorWasUnrecoverable
+				);
+			}
+		}
+
+		return EventContinuance.go;
 	}
 }
 
