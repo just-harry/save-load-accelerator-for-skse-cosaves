@@ -103,8 +103,7 @@ static if (expectedSKSE64Version >= 0x02_02_007_0)
 			}
 		}
 
-		wchar[512] stringBuffer = void;
-		showGenericSKSEVersionMismatchMessage(stringBuffer, skse.skse64Version);
+		showGenericSKSEVersionMismatchMessage(skse.skse64Version);
 
 		return true;
 	}

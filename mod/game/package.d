@@ -23,3 +23,6 @@ enum GameArchetype : ubyte
 
 enum GameArchetype targetedGameArchetype = __traits(getMember, GameArchetype, targetedGameTag);
 
+
+enum immutable(Char[]) targetedGameVersionFriendlyString (Char) = targetedGameVersionString[0 .. $ - 2];
+

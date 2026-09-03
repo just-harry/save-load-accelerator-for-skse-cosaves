@@ -1003,28 +1003,25 @@ void showComprehensiveSKSEVersionMismatchMessage (T) (
 
 	if (!isKnownOutdatedVersion)
 	{
-		showGenericSKSEVersionMismatchMessage(stringBuffer, skse64Version);
+		showGenericSKSEVersionMismatchMessage(skse64Version);
 	}
 }
 
 
 pragma(inline, false)
-void showGenericSKSEVersionMismatchMessage (scope ref wchar[512] stringBuffer, uint detectedSKSE64Version) nothrow @nogc
+void showGenericSKSEVersionMismatchMessage (uint detectedSKSE64Version) nothrow @nogc
 {
-	wchar* s = stringBuffer.ptr;
-	blit(s, "This version of the SKSE64 DLL is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\nPlease ensure you are using the correct version of S.L.A.C.K. for your version of the game.\r\n"w.ptr, 204);
-	s += 204;
-	blit(s, "Expected version: 0x"w.ptr, 20);
-	s += 20;
-	expectedSKSE64Version.asHexInto!true(s[0 .. 8]);
-	s += 8;
-	blit(s, "; Detected version: 0x"w.ptr, 22);
-	s += 22;
-	detectedSKSE64Version.asHexInto!true(s[0 .. 8]);
-	s += 8;
-	*s++ = '.';
-	*s++ = '\0';
-	reportErrorToUser(stringBuffer.ptr);
+	enum wstring mismatchString_ = (
+		  "This version of the SKSE64 DLL is not supported by the Save & Load Accelerator for SKSE Cosaves (S.L.A.C.K.).\r\n\r\n"
+		~ "Please ensure you are using the correct version of S.L.A.C.K. for your version of the game by re-running S.L.A.C.K.'s FOMOD.\r\n\r\n"
+		~ "This version of S.L.A.C.K. is for Skyrim v" ~ targetedGameVersionFriendlyString!wchar ~ ".\r\n\r\n"
+		~ "Expected SKSE version: 0x" ~ expectedSKSE64Version.asHex!(wchar, true) ~ "\r\nDetected SKSE version: 0x77777777\0"
+	);
+	__gshared wchar[mismatchString_.length] mismatchString = mismatchString_;
+
+	detectedSKSE64Version.asHexInto!true(mismatchString[$ - 9 .. ($ - 9) + 8][0 .. 8]);
+
+	reportErrorToUser(mismatchString.ptr);
 
 	showMessageBox(
 		"The previous error came from S.L.A.C.K., not SKSE.\r\nDo not report it to the SKSE team.",
