@@ -1043,8 +1043,13 @@ void saveCosaveSerial () nothrow @nogc
 
 	if (global.configuration.flags & ConfigurationLongLived.Flags.logSaveTimingsToConsole)
 	{
+		uint cosaveSize = cast(uint) (endOfData - base);
+		uint sizeStringLength = formatSize(cast(char[64]) stringBuffer[0 .. 32], cosaveSize);
+
 		global.addressOf.skseConsolePrint(
-			"S.L.A.C.K. | Cosave save timing | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
+			"S.L.A.C.K. | Cosave save timing | Cosave size: %*s | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
+			sizeStringLength,
+			stringBuffer.ptr,
 			cast(double) (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
 			cast(double) (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier,
 			cast(double) (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier,
@@ -1291,10 +1296,15 @@ waitingForSaveToFinish:
 
 	if (global.configuration.flags & ConfigurationLongLived.Flags.logSaveTimingsToConsole)
 	{
+		uint cosaveSize = cast(uint) (endOfData - base);
+		uint sizeStringLength = formatSize(cast(char[64]) stringBuffer[0 .. 32], cosaveSize);
+
 		global.addressOf.skseConsolePrint(
-			"S.L.A.C.K. | Cosave parallel save timing | Threads used: %u | Retries required: %u | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
+			"S.L.A.C.K. | Cosave parallel save timing | Threads used: %u | Retries required: %u | Cosave size: %*s | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
 			global.configuration.parallelSavingThreadCount,
 			retryCount,
+			sizeStringLength,
+			stringBuffer.ptr,
 			cast(double) (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
 			cast(double) (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier,
 			cast(double) (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier,
@@ -2060,8 +2070,12 @@ void loadCosaveSerial () nothrow @nogc
 
 	if (global.configuration.flags & ConfigurationLongLived.Flags.logLoadTimingsToConsole)
 	{
+		uint sizeStringLength = formatSize(cast(char[64]) stringBuffer[0 .. 32], cast(uint) cosaveFileSize);
+
 		global.addressOf.skseConsolePrint(
-			"S.L.A.C.K. | Cosave load timing | Opening file: %7.3f ms | Reading file: %7.3f ms | Plugin callbacks: %7.3f ms | Total: %7.3f ms",
+			"S.L.A.C.K. | Cosave load timing | Cosave size: %*s | Opening file: %7.3f ms | Reading file: %7.3f ms | Plugin callbacks: %7.3f ms | Total: %7.3f ms",
+			sizeStringLength,
+			stringBuffer.ptr,
 			cast(double) (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
 			cast(double) (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier,
 			cast(double) (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier,
@@ -2133,6 +2147,81 @@ version (SLACKVerificationMode)
 			FILE_INFORMATION_CLASS.FileEndOfFileInformation
 		);
 	}
+}
+
+
+pragma(inline, false)
+uint formatSize (scope ref char[64] buffer, uint size) @trusted pure nothrow @nogc
+{
+	ushort bytes =     (size >>  0) & 0b1111111111;
+	ushort kilobytes = (size >> 10) & 0b1111111111;
+	ushort megabytes = (size >> 20);
+
+	char* c = buffer.ptr + 32;
+
+	if (megabytes != 0)
+	{
+		auto mb = megabytes.asDecimal;
+		const unpadded = mb.unpadded;
+		c += blit(c, unpadded.ptr, unpadded.length);
+		*c++ = ' ';
+		*c++ = 'M';
+		*c++ = 'B';
+
+		if (llvm_expect((kilobytes != 0) | (bytes != 0), true))
+		{
+			bool duo = (kilobytes != 0) ^ (bytes != 0);
+			c += blit(c, duo ? "and ".ptr : ", ".ptr, 2 << duo);
+		}
+	}
+
+	if (kilobytes != 0)
+	{
+		auto kb = kilobytes.asDecimal;
+		const unpadded = kb.unpadded;
+		c += blit(c, unpadded.ptr, unpadded.length);
+		*c++ = ' ';
+		*c++ = 'K';
+		*c++ = 'B';
+
+		if (llvm_expect(bytes != 0, true))
+		{
+			*c++ = ' ';
+			*c++ = 'a';
+			*c++ = 'n';
+			*c++ = 'd';
+			*c++ = ' ';
+
+			goto formatBytes;
+		}
+
+		goto done;
+	}
+
+	if (llvm_expect(bytes != 0, true))
+	{
+	formatBytes:
+		auto b = bytes.asDecimal;
+		const unpadded = b.unpadded;
+		c += blit(c, unpadded.ptr, unpadded.length);
+		*c++ = ' ';
+		*c++ = 'b';
+		*c++ = 'y';
+		*c++ = 't';
+		*c++ = 'e';
+		*c = 's';
+		c += bytes != 1;
+	}
+done:
+	*c++ = '\0';
+
+	size_t length = c - (buffer.ptr + 32);
+	size_t padding = 32 - length;
+
+	repStos(buffer.ptr, ' ', padding);
+	blit(buffer.ptr + padding, buffer.ptr + 32, length);
+
+	return 32;
 }
 
 
