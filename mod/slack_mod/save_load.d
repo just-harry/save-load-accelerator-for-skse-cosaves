@@ -2202,7 +2202,7 @@ void logDetailsAfterCatchingException (
 	if (recordHeader is unaligned(&global.saveLoad.nullCosaveRecordHeader))
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | `%s`'s cosave state | Physical offset: %u | Offset: %u | %s: 0",
+			">>>>>>>>>> | `%s`'s cosave state | Physical offset: %u | Offset: %u | %s: 0",
 			strings.name,
 			physicalOffset,
 			offset,
@@ -2215,7 +2215,7 @@ void logDetailsAfterCatchingException (
 		formatHeaderSignature(signatureText, recordHeader.signature);
 
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | `%s`'s cosave state | Physical offset: %u | Offset: %u | %s: %u | Last %s record: {type: %s, version: %u, size: %u}",
+			">>>>>>>>>> | `%s`'s cosave state | Physical offset: %u | Offset: %u | %s: %u | Last %s record: {type: %s, version: %u, size: %u}",
 			strings.name,
 			physicalOffset,
 			offset,
@@ -2252,7 +2252,7 @@ void logDetailsAfterCatchingException (
 	if (versionInfo != null && versionInfo.dwSignature == 0xFEEF04BD)
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | `%s`'s version | SKSE plugin version: 0x%08X | DLL TimeDateStamp: 0x%08X | DLL file version: %u.%u.%u.%u | DLL product version: %u.%u.%u.%u",
+			">>>>>>>>>> | `%s`'s version | SKSE plugin version: 0x%08X | DLL TimeDateStamp: 0x%08X | DLL file version: %u.%u.%u.%u | DLL product version: %u.%u.%u.%u",
 			strings.name,
 			pluginVersion,
 			timeDateStamp,
@@ -2269,7 +2269,7 @@ void logDetailsAfterCatchingException (
 	else
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | `%s`'s version | SKSE plugin version: 0x%08X | DLL TimeDateStamp: 0x%08X",
+			">>>>>>>>>> | `%s`'s version | SKSE plugin version: 0x%08X | DLL TimeDateStamp: 0x%08X",
 			strings.name,
 			pluginVersion,
 			timeDateStamp,
@@ -2282,7 +2282,7 @@ void logDetailsAfterCatchingException (
 	do
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | Exception[%u] | Code: 0x%08X | Flags: 0x%08X | Argument Count: %u | Arguments: [0x%016llX, 0x%016llX, 0x%016llX, 0x%016llX]",
+			">>>>>>>>>> | Exception[%u] | Code: 0x%08X | Flags: 0x%08X | Argument Count: %u | Arguments: [0x%016llX, 0x%016llX, 0x%016llX, 0x%016llX]",
 			errorCounter,
 			error.ExceptionCode,
 			error.ExceptionFlags,
@@ -2301,12 +2301,12 @@ void logDetailsAfterCatchingException (
 	const(CONTEXT)* context = exception.ContextRecord;
 
 	global.addressOf.skseConsolePrint(
-		">>>>>>>> | Thread context | RAX: 0x%016llX | RCX: 0x%016llX | RDX: 0x%016llX | RBX: 0x%016llX | RSP: 0x%016llX | RBP: 0x%016llX | RSI: 0x%016llX | RDI: 0x%016llX",
+		">>>>>>>>>> | Thread context | RAX: 0x%016llX | RCX: 0x%016llX | RDX: 0x%016llX | RBX: 0x%016llX | RSP: 0x%016llX | RBP: 0x%016llX | RSI: 0x%016llX | RDI: 0x%016llX",
 		context.Rax, context.Rcx, context.Rdx, context.Rbx, context.Rsp, context.Rbp, context.Rsi, context.Rdi,
 	);
 
 	global.addressOf.skseConsolePrint(
-		">>>>>>>> | >>>>>>>>>>> |    R8: 0x%016llX |    R9: 0x%016llX | R10: 0x%016llX | R11: 0x%016llX | R12: 0x%016llX | R13: 0x%016llX | R14: 0x%016llX | R15: 0x%016llX",
+		">>>>>>>>>> | >>>>>>>>>>>>>> |  R8: 0x%016llX |  R9: 0x%016llX | R10: 0x%016llX | R11: 0x%016llX | R12: 0x%016llX | R13: 0x%016llX | R14: 0x%016llX | R15: 0x%016llX",
 		context. R8, context. R9, context.R10, context.R11, context.R12, context.R13, context.R14, context.R15,
 	);
 
@@ -2375,7 +2375,7 @@ void logDetailsAfterCatchingException (
 	if (dllName != null)
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | >>>>>>>>>>> | RIP: %s+0x%08x | Machine code at RIP: %s",
+			">>>>>>>>>> | >>>>>>>>>>>>>> | RIP: %s+0x%08x | Machine code at RIP: %s",
 			dllName,
 			displacement,
 			instructionHex.ptr
@@ -2384,14 +2384,14 @@ void logDetailsAfterCatchingException (
 	else
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | >>>>>>>>>>> | RIP: 0x%016llX | Machine code at RIP: %s",
+			">>>>>>>>>> | >>>>>>>>>>>>>> | RIP: 0x%016llX | Machine code at RIP: %s",
 			cast(size_t) rip,
 			instructionHex.ptr
 		);
 	}
 
 	enum string versionString = (
-		   ">>>>>>>> | Game version: " ~ targetedGameVersionString
+		   ">>>>>>>>>> | Game version: " ~ targetedGameVersionString
 		 ~ " | SKSE version: " ~ expectedSKSE64VersionString
 		 ~ " | S.L.A.C.K. version: 1.4.1"
 	);
@@ -2410,7 +2410,7 @@ void logDetailsAfterCatchingException (
 		if (versionInfo != null && versionInfo.dwSignature == 0xFEEF04BD)
 		{
 			global.addressOf.skseConsolePrint(
-				">>>>>>>> | `%s`'s version | DLL TimeDateStamp: 0x%08X | DLL file version: %u.%u.%u.%u | DLL product version: %u.%u.%u.%u",
+				">>>>>>>>>> | `%s`'s version | DLL TimeDateStamp: 0x%08X | DLL file version: %u.%u.%u.%u | DLL product version: %u.%u.%u.%u",
 				found.nameBuffer.ptr,
 				timeDateStamp,
 				versionInfo.dwFileVersionMS >>> 16,
@@ -2426,7 +2426,7 @@ void logDetailsAfterCatchingException (
 		else
 		{
 			global.addressOf.skseConsolePrint(
-				">>>>>>>> | `%s`'s version | DLL TimeDateStamp: 0x%08X",
+				">>>>>>>>>> | `%s`'s version | DLL TimeDateStamp: 0x%08X",
 				found.nameBuffer.ptr,
 				timeDateStamp,
 			);
