@@ -771,15 +771,21 @@ bool savePluginData (bool parallel = false) (
 
 			double duration = cast(double) (after - before) * global.performanceFrequencyMillisecondMultiplier;
 
+			uint dataSize = cast(uint) (pluginState.head - startOfPluginData);
+			char[64] sizeString = void;
+			uint sizeStringLength = formatSize(sizeString, dataSize);
+
 			static if (__traits(compiles, strings.filePath))
 			{
 				static if (parallel)
 				{
 					threadSafeSKSEConsolePrint(
-						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s [%s]",
+						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s [%s]",
 						threadIndex,
 						duration,
 						pluginState.recordCount,
+						sizeStringLength,
+						sizeString.ptr,
 						strings.name,
 						strings.filePath
 					);
@@ -787,10 +793,12 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | %s | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s [%s]",
+						"S.L.A.C.K. | %s | Plugin save callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s [%s]",
 						serialSaveLogPadding,
 						duration,
 						pluginState.recordCount,
+						sizeStringLength,
+						sizeString.ptr,
 						strings.name,
 						strings.filePath
 					);
@@ -801,20 +809,24 @@ bool savePluginData (bool parallel = false) (
 				static if (parallel)
 				{
 					threadSafeSKSEConsolePrint(
-						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s",
+						"S.L.A.C.K. | Thread: %3u | Plugin save callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s",
 						threadIndex,
 						duration,
 						pluginState.recordCount,
+						sizeStringLength,
+						sizeString.ptr,
 						strings.name
 					);
 				}
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | %s | Plugin save callback: %10.3f ms | Record count: %8u | Plugin: %s",
+						"S.L.A.C.K. | %s | Plugin save callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s",
 						serialSaveLogPadding,
 						duration,
 						pluginState.recordCount,
+						sizeStringLength,
+						sizeString.ptr,
 						strings.name
 					);
 				}
@@ -1943,7 +1955,10 @@ void loadCosaveSerial () nothrow @nogc
 			if ((global.configuration.flags & ConfigurationLongLived.Flags.profileLoading).llvm_expect(0))
 			{
 				@optStrategy("minsize")
-				static void profiledStateLoaderCall (scope const(SerialisationStateForPlugin)* plugin)
+				static void profiledStateLoaderCall (
+					scope const(SerialisationStateForPlugin)* plugin,
+					scope const(Unaligned!(Cosave.DLLPluginHeader))* pluginHeader
+				)
 				{
 					pragma(inline, false);
 
@@ -1970,14 +1985,20 @@ void loadCosaveSerial () nothrow @nogc
 
 					double duration = cast(double) (after - before) * global.performanceFrequencyMillisecondMultiplier;
 
+					uint dataSize = cast(uint) (cast(size_t) global.saveLoad.serial.pluginState.head - cast(size_t) pluginHeader);
+					char[64] sizeString = void;
+					uint sizeStringLength = formatSize(sizeString, dataSize);
+
 					uint actualRecordCount = purportedRecordCount - global.saveLoad.serial.pluginState.recordCount;
 
 					static if (__traits(compiles, strings.filePath))
 					{
 						global.addressOf.skseConsolePrint(
-							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Record count: %8u | Plugin: %s [%s]",
+							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s [%s]",
 							duration,
 							actualRecordCount,
+							sizeStringLength,
+							sizeString.ptr,
 							strings.name,
 							strings.filePath
 						);
@@ -1985,16 +2006,18 @@ void loadCosaveSerial () nothrow @nogc
 					else
 					{
 						global.addressOf.skseConsolePrint(
-							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Record count: %8u | Plugin: %s",
+							"S.L.A.C.K. | Plugin load callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s",
 							duration,
 							actualRecordCount,
+							sizeStringLength,
+							sizeString.ptr,
 							strings.name
 						);
 					}
 				}
 
 				/+ An exlined call to keep the branch short for when profiling is disabled. +/
-				profiledStateLoaderCall(plugin);
+				profiledStateLoaderCall(plugin, pluginHeader);
 			}
 			else
 			{
