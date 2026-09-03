@@ -6,6 +6,7 @@
 The eighteenth release of this plugin, the changes are as follows:
 - The size of the cosave file is now logged after saving and loading the cosave (when the `LogSaveTimingsToConsole` and `LogLoadTimingsToConsole` settings are enabled, respectively).
 - The size of each plugin's data in the cosave, when saving and loading, is now logged when profiling is enabled.
+- The error message for a mismatched SKSE version has been improved.
 - The exception logging no longer attempts to align fields with a proportional font in mind, and instead assumes that a monospaced font is used.
 - Exception arguments are now prefixed with "0x", like the other hexadecimal numbers are, when an exception is logged.
 - A misplaced comma between the third and fourth exception argument, when an exception is logged, was fixed.
