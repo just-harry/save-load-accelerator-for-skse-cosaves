@@ -2282,7 +2282,7 @@ void logDetailsAfterCatchingException (
 	do
 	{
 		global.addressOf.skseConsolePrint(
-			">>>>>>>> | Exception[%u] | Code: 0x%08X | Flags: 0x%08X | Argument Count: %u | Arguments: [%016llX, %016llX, %016llX ,%016llX]",
+			">>>>>>>> | Exception[%u] | Code: 0x%08X | Flags: 0x%08X | Argument Count: %u | Arguments: [0x%016llX, 0x%016llX, 0x%016llX, 0x%016llX]",
 			errorCounter,
 			error.ExceptionCode,
 			error.ExceptionFlags,
