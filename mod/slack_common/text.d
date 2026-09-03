@@ -75,6 +75,15 @@ void asHexInto (Char = char, bool uppercase = false, Value) (Value value, scope 
 }
 
 
+pragma(inline, true)
+Char[Value.sizeof * 2] asHex (Char = char, bool uppercase = false, Value) (Value value)
+{
+	Unqual!Char[Value.sizeof * 2] hex = void;
+	value.asHexInto!(Unqual!Char, uppercase, Value)(hex);
+	return hex;
+}
+
+
 auto asDecimal (Char = char, alias padding = Char(' '), Value) (Value value)
 {
 	enum uint[] maximumBase10DigitsBySizeOf = [0, 3, 5, 8, 10, 13, 15, 17, 20];
