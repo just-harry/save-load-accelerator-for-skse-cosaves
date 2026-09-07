@@ -11,12 +11,51 @@ import slack_common.bindings;
    Hence this. +/
 
 
-extern(C++) void call_and_handle_exception (
-	scope void* argument,
-	scope void function (void*) call,
-	scope int function (void*, scope const(void)*) handler,
-	scope void* handlerContext
-) nothrow @nogc;
+extern(C++)
+{
+	void call_and_handle_exception (
+		scope void* argument,
+		scope void function (void*) call,
+		scope int function (void*, scope const(void)*) handler,
+		scope void* handlerContext
+	) nothrow @nogc;
+
+
+	ubyte try_except_ubyte (
+		size_t,
+		scope ubyte function (size_t) call,
+		scope int function () handler,
+	) nothrow @nogc;
+
+
+	ubyte try_except_ubyte (
+		uint,
+		uint,
+		size_t,
+		uint,
+		size_t,
+		scope ubyte function (uint, uint, size_t, uint, size_t) call,
+		scope int function () handler,
+	) nothrow @nogc;
+
+
+	ubyte try_finally_ubyte (
+		size_t,
+		scope ubyte function (size_t) call,
+		scope void function () handler,
+	) nothrow @nogc;
+
+
+	ubyte try_finally_ubyte (
+		uint,
+		uint,
+		size_t,
+		uint,
+		size_t,
+		scope ubyte function (uint, uint, size_t, uint, size_t) call,
+		scope void function () handler,
+	) nothrow @nogc;
+}
 
 
 pragma(inline, true)
