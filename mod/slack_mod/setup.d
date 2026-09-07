@@ -883,7 +883,7 @@ static if (observingPluginFileNameViaCall)
 
 @optStrategy("minsize")
 pragma(inline, false)
-void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (ulong rcx, ulong rdx) nothrow @nogc
+void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (ulong rcx, ulong rdx, ulong r8, ulong r9) nothrow @nogc
 {
 	SKSE64Provider* provider = global.addressOf.globalSKSE64Provider;
 
@@ -924,9 +924,11 @@ void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (ulong rcx, ulong rdx)
 		goto useProvider;
 	}
 useProvider:
-	__ir_pure!(`call void asm sideeffect inteldialect "", "{rcx},{rdx}" (ptr %0, i64 %1)`, void)(
+	__ir_pure!(`call void asm sideeffect inteldialect "", "{rcx},{rdx},{r8},{r9}" (ptr %0, i64 %1, i64 %2, i64 %3)`, void)(
 		provider,
-		rdx
+		rdx,
+		r8,
+		r9
 	);
 }
 
