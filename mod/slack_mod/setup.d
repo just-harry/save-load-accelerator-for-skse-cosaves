@@ -368,57 +368,21 @@ bool setUpEverythingWithSKSEDLL (scope ref wchar[512] stringBuffer, scope ubyte*
 		return false;
 	}
 
-	PESections sortedSections = sections;
-	sortingNetwork!((a, b) => a.ptr > b.ptr)(sortedSections);
+	void[] skseAdjacentMemorySlice = void;
 
-	void* skseAdjacentMemory = void;
-	size_t size = void;
-	const(void)* base = void;
-	const(void)* tail = void;
-
-	/+ Can we allocate memory between SKSE's sections? +/
-	foreach (size_t index; 0 .. 1)
+	if (allocateImageAdjacentMemory(&skseAdjacentMemorySlice, sections) == 0)
 	{
-		base = sortedSections[index].endOf;
-		tail = sortedSections[index + 1].ptr;
-		size_t betweenSize = tail - base;
-
-		if (betweenSize >= 64.KB)
-		{
-			skseAdjacentMemory = null;
-			size = 64.KB;
-			if ((error = allocateVirtualMemoryWithinRange(base, tail, &skseAdjacentMemory, &size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)) == 0)
-			{
-				goto allocatedSKSEskseAdjacentMemory;
-			}
-		}
-	}
-
-	/+ What about after the sections? +/
-	base = sortedSections[$ - 1].endOf;
-	tail = sortedSections[0].ptr + 2.GB;
-	skseAdjacentMemory = null;
-	size = 64.KB;
-	if ((error = allocateVirtualMemoryWithinRange(base, tail, &skseAdjacentMemory, &size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)) == 0)
-	{
-		goto allocatedSKSEskseAdjacentMemory;
-	}
-
-	/+ Before? +/
-	base = sortedSections[$ - 1].endOf - 2.GB;
-	tail = sortedSections[0].ptr;
-	skseAdjacentMemory = null;
-	size = 64.KB;
-	if ((error = allocateVirtualMemoryWithinRange(base, tail, &skseAdjacentMemory, &size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)) == 0)
-	{
-		goto allocatedSKSEskseAdjacentMemory;
+		goto allocatedSKSEAdjacentMemory;
 	}
 
 	errorMessage = "Memory could not be allocated sufficiently close to the SKSE64 DLL.";
 reportErrorOnFailure:
 	reportErrorToUser(stringBuffer, errorMessage, error);
 	return false;
-allocatedSKSEskseAdjacentMemory:
+allocatedSKSEAdjacentMemory:
+	size_t size = skseAdjacentMemorySlice.length;
+	void* skseAdjacentMemory = skseAdjacentMemorySlice.ptr;
+
 	debug
 	{
 		wchar* s = stringBuffer.ptr;
@@ -984,6 +948,65 @@ void specialSKSE64AssignStateSaver (
 	auto pointer = cast(size_t) providerReceiver | specialStateSaverTag;
 
 	serialisationProvider.assignStateSaver(dllPluginIndex, cast(SerialisationProvider.ProviderReceiver) pointer);
+}
+
+
+
+
+pragma(inline, false)
+uint allocateImageAdjacentMemory (scope void[]* memory, scope ref PESections sections) nothrow @nogc
+{
+	PESections sortedSections = sections;
+	sortingNetwork!((a, b) => a.ptr > b.ptr)(sortedSections);
+
+	uint error = void;
+
+	void* adjacentMemory = void;
+	size_t size = void;
+	const(void)* base = void;
+	const(void)* tail = void;
+
+	/+ Can we allocate memory between the image's sections? +/
+	foreach (size_t index; 0 .. 1)
+	{
+		base = sortedSections[index].endOf;
+		tail = sortedSections[index + 1].ptr;
+		size_t betweenSize = tail - base;
+
+		if (betweenSize >= 64.KB)
+		{
+			adjacentMemory = null;
+			size = 64.KB;
+			if ((error = allocateVirtualMemoryWithinRange(base, tail, &adjacentMemory, &size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)) != 0)
+			{
+				return error;
+			}
+		}
+	}
+
+	/+ What about after the sections? +/
+	base = sortedSections[$ - 1].endOf;
+	tail = sortedSections[0].ptr + 2.GB;
+	adjacentMemory = null;
+	size = 64.KB;
+	if ((error = allocateVirtualMemoryWithinRange(base, tail, &adjacentMemory, &size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)) != 0)
+	{
+		return error;
+	}
+
+	/+ Before? +/
+	base = sortedSections[$ - 1].endOf - 2.GB;
+	tail = sortedSections[0].ptr;
+	adjacentMemory = null;
+	size = 64.KB;
+	if ((error = allocateVirtualMemoryWithinRange(base, tail, &adjacentMemory, &size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE)) != 0)
+	{
+		return error;
+	}
+
+	*memory = adjacentMemory[0 .. size];
+
+	return 0;
 }
 
 
