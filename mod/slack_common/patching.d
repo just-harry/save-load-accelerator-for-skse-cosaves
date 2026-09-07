@@ -261,14 +261,14 @@ in (x86Register < 8)
 
 
 pragma(inline, true)
-int writeNearDisplacementTo (ubyte beforeDisplacementSize) (
+int writeNearDisplacementTo (ubyte instructionSize) (
 	scope ubyte* memory,
 	scope const(ubyte)* target
 ) pure nothrow @nogc
 {
-	int displacement = x86Displacement!5(memory - beforeDisplacementSize, target);
+	int displacement = x86Displacement!instructionSize(memory, target);
 
-	*unaligned(cast(int*) memory) = displacement;
+	*unaligned(cast(int*) (memory + instructionSize - 4)) = displacement;
 
 	return displacement;
 }
