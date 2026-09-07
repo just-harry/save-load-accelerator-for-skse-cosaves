@@ -4,9 +4,6 @@
 #include <excpt.h>
 
 
-
-
-
 void call_and_handle_exception (
 	void *argument,
 	void (*call) (void *),
