@@ -922,7 +922,7 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | %s | Plugin save callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s [%s]",
+						"S.L.A.C.K. | %sPlugin save callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s [%s]",
 						serialSaveLogPadding,
 						duration,
 						pluginState.recordCount,
@@ -950,7 +950,7 @@ bool savePluginData (bool parallel = false) (
 				else
 				{
 					global.addressOf.skseConsolePrint(
-						"S.L.A.C.K. | %s | Plugin save callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s",
+						"S.L.A.C.K. | %sPlugin save callback: %10.3f ms | Record count: %8u | Data size: %*s | Plugin: %s",
 						serialSaveLogPadding,
 						duration,
 						pluginState.recordCount,
@@ -1289,7 +1289,7 @@ void saveCosaveParallel () nothrow @nogc
 
 		if ((plugin.stateSaver != null) & plugin.uniqueIDHasBeenAssigned)
 		{
-			if (savePluginData(&global.saveLoad.serial.pluginState, plugin.uniqueID, plugin.stateSaver, &endOfData, 0, 0, "Thread: N/A"))
+			if (savePluginData(&global.saveLoad.serial.pluginState, plugin.uniqueID, plugin.stateSaver, &endOfData, 0, 0, "Thread: N/A | "))
 			{
 				++global.saveLoad.parallel.cosaveFilePluginsWithDataInCosaveCount;
 			}
