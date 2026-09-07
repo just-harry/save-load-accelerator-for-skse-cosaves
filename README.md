@@ -81,5 +81,5 @@ Thus, a great deal of this repository is my own non-standard-library, found in `
 	- [`mod/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def`](mod/slack_mod/Save&LoadAcceleratorForSKSECosaves-SKSELoader.def): Defines the exports of the plugin's DLL for versions targeting SKSE's usual loader.
 	- [`mod/slack_mod/save_load.d`](mod/slack_mod/save_load.d): The actual implementation of optimised saving and loading for SKSE cosave files.
 	- [`mod/slack_mod/setup.d`](mod/slack_mod/setup.d): This file is responsible for installing the optimised saving/loading hooks at runtime, and generally setting up all the fiddly global state.
-- [`mod/Save&LoadAcceleratorForSKSECosaves.ini`](mod/Save&LoadAcceleratorForSKSECosaves.ini): The default configuration file for the plugin.
+- [`mod/!!!!!!!##$Save&LoadAcceleratorForSKSECosaves.ini`](mod/!!!!!!!%23%23%24Save%26LoadAcceleratorForSKSECosaves.ini): The default configuration file for the plugin.
 
