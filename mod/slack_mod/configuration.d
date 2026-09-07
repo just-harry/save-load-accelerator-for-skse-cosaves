@@ -43,6 +43,7 @@ struct ConfigurationLongLived
 		showLoadingErrorNotifications = 1 << 11,
 		showSavingWarningNotifications = 1 << 12,
 		showLoadingWarningNotifications = 1 << 13,
+		aggregateFileFlushingInSKSE = 1 << 14,
 	}
 
 	enum SoundEffect : ubyte
@@ -66,6 +67,7 @@ struct ConfigurationLongLived
 			| Flags.showLoadingErrorNotifications
 			| Flags.showSavingWarningNotifications
 			| Flags.showLoadingWarningNotifications
+			| Flags.aggregateFileFlushingInSKSE
 		);
 
 		this.parallelSavingThreadCount = 0;
@@ -92,7 +94,13 @@ struct ConfigurationLongLived
 	pragma(inline, true)
 	Flags skseHooksAreRequired () const @property scope @safe pure nothrow @nogc
 	{
-		return this.accelerationEnabled | this.timingLoggingEnabled;
+		return this.accelerationEnabled | this.timingLoggingEnabled | (this.flags & Flags.aggregateFileFlushingInSKSE);
+	}
+
+	pragma(inline, true)
+	Flags aggregateFileFlushingEnabled () const @property scope @safe pure nothrow @nogc
+	{
+		return this.flags & Flags.aggregateFileFlushingInSKSE;
 	}
 
 	pragma(inline, true)
@@ -275,6 +283,12 @@ void parseINIConfiguration (
 		mixin(flag!("workaroundthirdpartybugs", q{F.workAroundThirdPartyBugs}, q{true}));
 	};
 
+	/+ [Patches] +/
+	scope patchesSectionHandler = (scope const(INIAssignment!(const(char)))* a) @trusted
+	{
+		mixin(flag!("aggregatefileflushinginskse", q{F.aggregateFileFlushingInSKSE}, q{true}));
+	};
+
 	/+ [Notifications] +/
 	scope notificationsSectionHandler = (scope const(INIAssignment!(const(char)))* a) @trusted
 	{
@@ -315,6 +329,7 @@ void parseINIConfiguration (
 		(scope const(INISection!(const(char)))* s)
 		{
 			mixin(iniSection!("skse", q{skseSectionHandler}));
+			mixin(iniSection!("patches", q{patchesSectionHandler}));
 			mixin(iniSection!("settings", q{settingsSectionHandler}));
 			mixin(iniSection!("profiling", q{profilingSectionHandler}));
 			mixin(iniSection!("notifications", q{notificationsSectionHandler}));

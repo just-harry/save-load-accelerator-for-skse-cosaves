@@ -35,22 +35,26 @@ struct GlobalState
 	HMODULE dllModule;
 	ulong performanceFrequency;
 	double performanceFrequencyMillisecondMultiplier = 0;
+	ubyte skseConsolePrintLock;
 	bool haveWarnedUserAboutNearlyReachingSaveFileSizeLimit;
 	bool haveSetUpSpecialSKSE64Providers;
 	bool anyPluginCosaveHandlerThrewAnException;
 	bool recoverableErrorsOccurred;
 	bool unrecoverableErrorsOccurred;
+align(8)
+	ubyte inhibitLogFileFlushing;
 	SpecialPlugin currentSpecialPluginBeingLoaded;
-	ubyte skseConsolePrintLock;
 
 	SKSE64Provider specialSKSE64Provider;
 	SerialisationProvider specialSerialisationProvider;
 
 	ResolvedAddresses addressOf;
 	ConfigurationLongLived configuration;
+	uint logFileFlushElisionCounter;
 	SaveLoadState saveLoad;
 
 	static assert(__traits(isZeroInit, GlobalState));
+	static assert((inhibitLogFileFlushing.offsetof & 7) == 0);
 }
 
 
@@ -81,12 +85,26 @@ struct ResolvedAddresses
 		}
 	}
 
+	void** skseLogFileStdioHandle;
 	ubyte* supplySKSEProviderLEA;
+	ubyte* supplySKSESaveCallbackLEA;
+	ubyte* supplySKSELoadCallbackLEA;
+	/+ The compiler emitted two copies of this instruction, for the VR version, for some reason. +/
+	static if (targetedGameArchetype == GameArchetype.vr) ubyte* supplySKSELoadCallbackLEA1;
 	ubyte* createSKSECosave;
 	ubyte* restoreSKSECosave;
 	ubyte* createSKSECosaveCall;
 	ubyte* restoreSKSECosaveCall;
+	ubyte* emitSaveMessageCall;
+	extern(C++) ubyte function (uint, uint, size_t, uint, size_t) nothrow @nogc emitSaveMessageCallTarget;
+	ubyte* emitPreLoadMessageCall;
+	extern(C++) ubyte function (uint, uint, size_t, uint, size_t) nothrow @nogc emitPreLoadMessageCallTarget;
+	ubyte* emitProLoadMessageCall;
+	extern(C++) ubyte function (uint, uint, size_t, uint, size_t) nothrow @nogc emitProLoadMessageCallTarget;
+	extern(C++) ubyte function (ulong rcx) skseSaveCallback;
+	extern(C++) ubyte function (ulong rcx) skseLoadCallback;
 	extern(C) void function (scope const(char)* format, ...) nothrow @nogc skseConsolePrint;
+	extern(C) int function (scope void* file) nothrow @nogc skseFFlush;
 	const(ubyte)* skseDLL;
 
 	version (SLACKVerificationMode)

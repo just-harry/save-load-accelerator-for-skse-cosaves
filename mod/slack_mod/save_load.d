@@ -42,6 +42,8 @@ import skse64.serialisation;
 import skse64.hacks.versioning;
 import skse64.hacks.offsets;
 
+import std.meta : AliasSeq;
+
 
 /+ I'm going to be frank with you. The naming isn't great here.
    Prepare yourself for a morass of state, states, plugins, and plugin state. +/
@@ -534,6 +536,110 @@ void allowPluginsToLoadWhenSKSEIsNotLoading () ()
 }
 
 
+ubyte fileFlushAggregator_skseSaveCallback (AliasSeq!ulong arguments)
+{
+	enum string fflush = q{global.addressOf.skseFFlush};
+	enum string logFileStdioHandle = q{global.addressOf.skseLogFileStdioHandle};
+	enum string call = q{global.addressOf.skseSaveCallback};
+	enum bool eagerlyFlush = false;
+	mixin(fileFlushAggregator);
+}
+
+
+ubyte fileFlushAggregator_skseLoadCallback (AliasSeq!ulong arguments)
+{
+	enum string fflush = q{global.addressOf.skseFFlush};
+	enum string logFileStdioHandle = q{global.addressOf.skseLogFileStdioHandle};
+	enum string call = q{global.addressOf.skseLoadCallback};
+	enum bool eagerlyFlush = false;
+	mixin(fileFlushAggregator);
+}
+
+
+ubyte fileFlushAggregator_skseEmitSaveMessage (AliasSeq!(uint, uint, size_t, uint, size_t) arguments)
+{
+	enum string fflush = q{global.addressOf.skseFFlush};
+	enum string logFileStdioHandle = q{global.addressOf.skseLogFileStdioHandle};
+	enum string call = q{global.addressOf.emitSaveMessageCallTarget};
+	enum bool eagerlyFlush = false;
+	mixin(fileFlushAggregator);
+}
+
+
+ubyte fileFlushAggregator_skseEmitPreLoadMessage (AliasSeq!(uint, uint, size_t, uint, size_t) arguments)
+{
+	enum string fflush = q{global.addressOf.skseFFlush};
+	enum string logFileStdioHandle = q{global.addressOf.skseLogFileStdioHandle};
+	enum string call = q{global.addressOf.emitPreLoadMessageCallTarget};
+	enum bool eagerlyFlush = false;
+	mixin(fileFlushAggregator);
+}
+
+
+ubyte fileFlushAggregator_skseEmitPostLoadMessage (AliasSeq!(uint, uint, size_t, uint, size_t) arguments)
+{
+	enum string fflush = q{global.addressOf.skseFFlush};
+	enum string logFileStdioHandle = q{global.addressOf.skseLogFileStdioHandle};
+	enum string call = q{global.addressOf.emitProLoadMessageCallTarget};
+	enum bool eagerlyFlush = false;
+	mixin(fileFlushAggregator);
+}
+
+
+enum string fileFlushAggregator =
+q{
+	extern(C++)
+	static ubyte try_ (scope typeof(arguments) arguments_)
+	{
+		extern(C++)
+		static ubyte try__ (scope typeof(arguments_) arguments__)
+		{
+			global.inhibitLogFileFlushing = true;
+			return mixin(call)(arguments__);
+		}
+
+		extern(C++)
+		static int except__ ()
+		{
+			global.inhibitLogFileFlushing = false;
+			/+ Flush the log file if something has gone wrong, to avoid a truncated log. +/
+			mixin(fflush)(*mixin(logFileStdioHandle));
+			return EXCEPTION_EXECUTE_HANDLER;
+		}
+
+		return try_except_ubyte(
+			arguments_,
+			&try__,
+			&except__
+		);
+	}
+
+	extern(C++)
+	static void finally_ ()
+	{
+		global.inhibitLogFileFlushing = false;
+
+		static if (eagerlyFlush)
+		{
+			mixin(fflush)(*mixin(logFileStdioHandle));
+		}
+		else
+		{
+			/+ Flush the file in debug builds to be sure the addresses are right.
+			   We don't bother in release builds as the log will be flushed
+			   by SKSE when it clears the save path. +/
+			debug mixin(fflush)(*mixin(logFileStdioHandle));
+		}
+	}
+
+	return try_finally_ubyte(
+		arguments,
+		&try_,
+		&finally_
+	);
+};
+
+
 /+ The serialisation-state array is a sparse-array wherein the index
    of the serialisation-state corresponds to the index of the parent DLL-plugin,
    but biased by one, because the serialisation-state for SKSE itself
@@ -1012,6 +1118,8 @@ void saveCosaveSerial () nothrow @nogc
 
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[1]);
 
+	global.logFileFlushElisionCounter = 0;
+
 	ubyte* base = global.saveLoad.cosaveFileBuffer.base;
 	Cosave.Header* header = cast(Cosave.Header*) base;
 
@@ -1103,6 +1211,8 @@ void saveCosaveParallel () nothrow @nogc
 	scope(exit) NtClose(cosaveFile);
 
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[1]);
+
+	global.logFileFlushElisionCounter = 0;
 
 	ubyte* base = global.saveLoad.cosaveFileBuffer.base;
 	Cosave.Header* header = cast(Cosave.Header*) base;
@@ -1798,6 +1908,8 @@ void loadCosaveSerial () nothrow @nogc
 	prefetchWrite(global.addressOf.cosaveAwarePlugins);
 
 	RtlQueryPerformanceCounter(cast(LARGE_INTEGER*) &time[2]);
+
+	global.logFileFlushElisionCounter = 0;
 
 	ubyte* base = global.saveLoad.cosaveFileBuffer.base;
 	Cosave.Header* header = cast(Cosave.Header*) base;

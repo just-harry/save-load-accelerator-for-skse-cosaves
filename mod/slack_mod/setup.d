@@ -533,12 +533,20 @@ allocatedSKSEAdjacentMemory:
 	}
 
 	global.addressOf.cosaveAwarePlugins = cast(std_vector!SerialisationStateForPlugin*) (sections.data.ptr + skse64Offsets.cosaveAwarePlugins);
+	global.addressOf.skseLogFileStdioHandle = cast(void**) (sections.data.ptr + skse64Offsets.logFileStdioHandle);
 	global.addressOf.supplySKSEProviderLEA = sections.text.ptr + skse64Offsets.supplyProviderLEA;
+	global.addressOf.supplySKSESaveCallbackLEA = sections.text.ptr + skse64Offsets.supplySaveCallbackLEA;
+	global.addressOf.supplySKSELoadCallbackLEA = sections.text.ptr + skse64Offsets.supplyLoadCallbackLEA;
+	static if (targetedGameArchetype == GameArchetype.vr) global.addressOf.supplySKSELoadCallbackLEA1 = sections.text.ptr + skse64Offsets.supplyLoadCallbackLEA1;
 	global.addressOf.createSKSECosave = sections.text.ptr + skse64Offsets.createCosave;
 	global.addressOf.restoreSKSECosave = sections.text.ptr + skse64Offsets.restoreCosave;
 	global.addressOf.createSKSECosaveCall = sections.text.ptr + skse64Offsets.createCosaveCall;
 	global.addressOf.restoreSKSECosaveCall = sections.text.ptr + skse64Offsets.restoreCosaveCall;
 	global.addressOf.skseConsolePrint = cast(typeof(global.addressOf.skseConsolePrint)) (sections.text.ptr + skse64Offsets.consolePrint);
+	global.addressOf.skseFFlush = cast(typeof(global.addressOf.skseFFlush)) (sections.text.ptr + skse64Offsets.fflush);
+	global.addressOf.emitSaveMessageCall = sections.text.ptr + skse64Offsets.emitSaveMessageCall;
+	global.addressOf.emitPreLoadMessageCall = sections.text.ptr + skse64Offsets.emitPreLoadMessageCall;
+	global.addressOf.emitProLoadMessageCall = sections.text.ptr + skse64Offsets.emitProLoadMessageCall;
 
 	static if (observingPluginFileNameViaCall)
 	{
@@ -639,6 +647,53 @@ allocatedSKSEAdjacentMemory:
 		);
 
 		FlushInstructionCache(thisProcess, global.addressOf.restoreSKSECosaveCall, 5);
+	}
+
+	if (global.configuration.flags & Config.aggregateFileFlushingInSKSE)
+	{
+		global.addressOf.skseSaveCallback = cast(typeof(global.addressOf.skseSaveCallback)) (
+			x86TargetOf!7(global.addressOf.supplySKSESaveCallbackLEA)
+		);
+		global.addressOf.skseLoadCallback = cast(typeof(global.addressOf.skseLoadCallback)) (
+			x86TargetOf!7(global.addressOf.supplySKSELoadCallbackLEA)
+		);
+
+		global.addressOf.emitSaveMessageCallTarget = cast(typeof(global.addressOf.emitSaveMessageCallTarget)) (
+			x86TargetOf!5(global.addressOf.emitSaveMessageCall)
+		);
+		global.addressOf.emitPreLoadMessageCallTarget = cast(typeof(global.addressOf.emitPreLoadMessageCallTarget)) (
+			x86TargetOf!5(global.addressOf.emitPreLoadMessageCall)
+		);
+		global.addressOf.emitProLoadMessageCallTarget = cast(typeof(global.addressOf.emitProLoadMessageCallTarget)) (
+			x86TargetOf!5(global.addressOf.emitProLoadMessageCall)
+		);
+
+		static ubyte* install (scope ubyte* c, scope ubyte* place, scope const(ubyte)* target)
+		{
+			c = c.alignUpTo(16);
+			ubyte* trampoline = c;
+			c += c.writeJumpTo(cast(const(ubyte)*) target); /+ jmp target +/
+
+			withCodeRegionMadeWritable(
+				place,
+				5,
+				(scope ubyte* a, size_t s) {a.writeDirectCallOf(trampoline);}
+			);
+
+			return c;
+		}
+
+		c = reassembleAsPredicatedCall(c, sections.text.ptr + skse64Offsets.fflushCall0, &global.inhibitLogFileFlushing, &global.logFileFlushElisionCounter);
+		c = reassembleAsPredicatedCall(c, sections.text.ptr + skse64Offsets.fflushCall1, &global.inhibitLogFileFlushing, &global.logFileFlushElisionCounter);
+		c = reassembleAsPredicatedCall(c, sections.text.ptr + skse64Offsets.fflushCall2, &global.inhibitLogFileFlushing, &global.logFileFlushElisionCounter);
+
+		c = lea64Trampoline(c, global.addressOf.supplySKSESaveCallbackLEA, cast(const(ubyte)*) &fileFlushAggregator_skseSaveCallback);
+		c = lea64Trampoline(c, global.addressOf.supplySKSELoadCallbackLEA, cast(const(ubyte)*) &fileFlushAggregator_skseLoadCallback);
+		static if (targetedGameArchetype == GameArchetype.vr) c = lea64Trampoline(c, global.addressOf.supplySKSELoadCallbackLEA1, cast(const(ubyte)*) &fileFlushAggregator_skseLoadCallback);
+
+		c = install(c, global.addressOf.emitSaveMessageCall, cast(const(ubyte)*) &fileFlushAggregator_skseEmitSaveMessage);
+		c = install(c, global.addressOf.emitPreLoadMessageCall, cast(const(ubyte)*) &fileFlushAggregator_skseEmitPreLoadMessage);
+		c = install(c, global.addressOf.emitProLoadMessageCall, cast(const(ubyte)*) &fileFlushAggregator_skseEmitPostLoadMessage);
 	}
 
 	version (SLACKVerificationMode)
@@ -951,6 +1006,52 @@ void specialSKSE64AssignStateSaver (
 }
 
 
+
+
+@optStrategy("minsize")
+ubyte* lea64Trampoline (return scope ubyte* c, scope ubyte* place, scope const(ubyte)* target) nothrow @nogc
+{
+	c = c.alignUpTo(16);
+	ubyte* trampoline = c;
+	c += c.writeJumpTo(target); /+ jmp target +/
+
+	withCodeRegionMadeWritable(
+		place,
+		7,
+		(scope ubyte* a, size_t s) {a.writeNearDisplacementTo!7(trampoline);}
+	);
+
+	return c;
+}
+
+
+@optStrategy("minsize")
+ubyte* reassembleAsPredicatedCall (
+	return scope ubyte* c,
+	scope ubyte* place,
+	scope const(ubyte)* inhibition,
+	scope uint* elisionCounter
+) nothrow @nogc
+{
+	const(ubyte)* target = x86TargetOf!5(place);
+
+	c = c.alignUpTo(16);
+	ubyte* trampoline = c;
+	*c++ = REX.W; *c++ = 0xA1; *cast(Unaligned!ulong*) c = cast(ulong) inhibition; c += 8;        /+ mov rax, qword ptr [inhibition] +/
+	*c++ = 0x84; *c++ = modRM(3, 0, 0);                                                           /+ test al, al +/
+	c[0] = 0x0F; c[1] = 0x84; *cast(Unaligned!int*) &c[2] = x86Displacement!6(c, target); c += 6; /+ jz target +/
+	*c++ = REX.W; *c++ = 0xB8; *cast(Unaligned!ulong*) c = cast(ulong) elisionCounter; c += 8;    /+ mov rax, elisionCounter +/
+	*c++ = 0xFF; *c++ = modRM(0, 0, 0);                                                           /+ inc dword ptr [rax] +/
+	*c++ = 0xC3;                                                                                  /+ ret +/
+
+	withCodeRegionMadeWritable(
+		place,
+		5,
+		(scope ubyte* a, size_t s) {a.writeDirectCallOf(trampoline);}
+	);
+
+	return c;
+}
 
 
 pragma(inline, false)
