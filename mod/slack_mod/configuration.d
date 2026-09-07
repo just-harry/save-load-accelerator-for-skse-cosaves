@@ -44,6 +44,7 @@ struct ConfigurationLongLived
 		showSavingWarningNotifications = 1 << 12,
 		showLoadingWarningNotifications = 1 << 13,
 		aggregateFileFlushingInSKSE = 1 << 14,
+		aggregateFileFlushingInPapyrusUtil = 1 << 15,
 	}
 
 	enum SoundEffect : ubyte
@@ -68,6 +69,7 @@ struct ConfigurationLongLived
 			| Flags.showSavingWarningNotifications
 			| Flags.showLoadingWarningNotifications
 			| Flags.aggregateFileFlushingInSKSE
+			| Flags.aggregateFileFlushingInPapyrusUtil
 		);
 
 		this.parallelSavingThreadCount = 0;
@@ -98,9 +100,15 @@ struct ConfigurationLongLived
 	}
 
 	pragma(inline, true)
+	Flags papyrusUtilHooksAreRequired () const @property scope @safe pure nothrow @nogc
+	{
+		return this.flags & Flags.aggregateFileFlushingInPapyrusUtil;
+	}
+
+	pragma(inline, true)
 	Flags aggregateFileFlushingEnabled () const @property scope @safe pure nothrow @nogc
 	{
-		return this.flags & Flags.aggregateFileFlushingInSKSE;
+		return this.flags & (Flags.aggregateFileFlushingInSKSE | Flags.aggregateFileFlushingInPapyrusUtil);
 	}
 
 	pragma(inline, true)
@@ -287,6 +295,7 @@ void parseINIConfiguration (
 	scope patchesSectionHandler = (scope const(INIAssignment!(const(char)))* a) @trusted
 	{
 		mixin(flag!("aggregatefileflushinginskse", q{F.aggregateFileFlushingInSKSE}, q{true}));
+		mixin(flag!("aggregatefileflushinginpapyrusutil", q{F.aggregateFileFlushingInPapyrusUtil}, q{true}));
 	};
 
 	/+ [Notifications] +/

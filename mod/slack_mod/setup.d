@@ -878,7 +878,11 @@ dllNameFromDot:
 
 	if (baseNameLength == 11)
 	{
-		if (caseInsensitiveASCIIEquality!true(name, "stb_widgets".ptr, 11))
+		if (caseInsensitiveASCIIEquality!true(name, "papyrusutil".ptr, 11))
+		{
+			return SpecialPlugin.papyrusUtil;
+		}
+		else if (caseInsensitiveASCIIEquality!true(name, "stb_widgets".ptr, 11))
 		{
 			return SpecialPlugin.stbWidgets;
 		}
@@ -908,6 +912,7 @@ void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (ulong rcx, ulong rdx,
 
 	static if (observingPluginFileNameViaCall)
 	{
+		DLLPlugin* pluginBeingLoaded = cast(DLLPlugin*) rdx;
 		SpecialPlugin currentSpecialPlugin = global.currentSpecialPluginBeingLoaded;
 	}
 	else
@@ -915,11 +920,11 @@ void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (ulong rcx, ulong rdx,
 		static if (expectedSKSE64Version >= 0x02_02_007_0)
 		{
 			DLLPluginIndex biasedIndexOfPluginBeingLoaded = *global.addressOf.indexOfSKSEPluginBeingLoaded;
-			const(DLLPlugin)* pluginBeingLoaded = (cast(DLLPluginIndex) (biasedIndexOfPluginBeingLoaded - 1)).dllPlugin;
+			DLLPlugin* pluginBeingLoaded = (cast(DLLPluginIndex) (biasedIndexOfPluginBeingLoaded - 1)).dllPlugin;
 		}
 		else
 		{
-			const(DLLPlugin)* pluginBeingLoaded = *global.addressOf.sksePluginBeingLoaded;
+			DLLPlugin* pluginBeingLoaded = *global.addressOf.sksePluginBeingLoaded;
 		}
 
 		const(std_string)* dllName = &pluginBeingLoaded.filePath;
@@ -929,6 +934,20 @@ void hijackProvisionOfSKSE64ProviderWhenLoadingSKSEPlugin (ulong rcx, ulong rdx,
 	final switch (currentSpecialPlugin)
 	{
 	case SpecialPlugin.none:
+		break;
+	case SpecialPlugin.papyrusUtil:
+		static if (patchingPapyrusUtilIsSupported)
+		{
+			if (global.foundPapyrusUtil)
+			{
+				break;
+			}
+
+			global.foundPapyrusUtil = true;
+
+			setUpWithPapyrusUtilDLL(cast(ubyte*) pluginBeingLoaded.dll);
+		}
+
 		break;
 	case SpecialPlugin.stbWidgets:
 		/+ There used to be some version-detection logic here,
@@ -1006,6 +1025,76 @@ void specialSKSE64AssignStateSaver (
 }
 
 
+static if (patchingPapyrusUtilIsSupported)
+{
+	@optStrategy("minsize")
+	pragma(inline, false)
+	void setUpWithPapyrusUtilDLL (scope ubyte* papyrusUtilDLL) nothrow @nogc
+	{
+		alias Config = ConfigurationLongLived.Flags;
+
+		if (!(global.configuration.flags & Config.aggregateFileFlushingInPapyrusUtil))
+		{
+			return;
+		}
+
+		auto dos = cast(const(IMAGE_DOS_HEADER)*) papyrusUtilDLL;
+		auto pe = cast(const(IMAGE_NT_HEADERS64)*) (papyrusUtilDLL + dos.e_lfanew);
+		uint timeDateStamp = pe.FileHeader.TimeDateStamp;
+
+		if (timeDateStamp != expectedPapyrusUtilTimeDateStamp)
+		{
+			return;
+		}
+
+		PESections sections = void;
+
+		if (findSectionsOfPE64(papyrusUtilDLL, &sections) != 0)
+		{
+			return;
+		}
+
+		uint versionNumber = *cast(const(Unaligned!uint)*) (sections.text.ptr + papyrusUtilOffsets.versionNumberImmediate);
+
+		if (versionNumber != expectedPapyrusUtilVersion)
+		{
+			return;
+		}
+
+		void[] papyrusUtilAdjacentMemory = void;
+
+		if (allocateImageAdjacentMemory(&papyrusUtilAdjacentMemory, sections) != 0)
+		{
+			return;
+		}
+
+		global.addressOf.papyrusUtilSaveCallback = cast(typeof(global.addressOf.papyrusUtilSaveCallback)) (
+			x86TargetOf!7(sections.text.ptr + papyrusUtilOffsets.supplySaveCallbackLEA)
+		);
+		global.addressOf.papyrusUtilLoadCallback = cast(typeof(global.addressOf.papyrusUtilLoadCallback)) (
+			x86TargetOf!7(sections.text.ptr + papyrusUtilOffsets.supplyLoadCallbackLEA)
+		);
+
+		global.addressOf.papyrusUtilLogFileStdioHandle = cast(void**) (sections.data.ptr + papyrusUtilOffsets.logFileStdioHandle);
+		global.addressOf.papyrusUtilFFlush = cast(typeof(global.addressOf.papyrusUtilFFlush)) (sections.text.ptr + papyrusUtilOffsets.fflush);
+
+		ubyte* code = cast(ubyte*) papyrusUtilAdjacentMemory.ptr;
+		ubyte* c = code;
+
+		c = reassembleAsPredicatedCall(c, sections.text.ptr + papyrusUtilOffsets.fflushCall0, &global.inhibitLogFileFlushing, &global.logFileFlushElisionCounter);
+		c = reassembleAsPredicatedCall(c, sections.text.ptr + papyrusUtilOffsets.fflushCall1, &global.inhibitLogFileFlushing, &global.logFileFlushElisionCounter);
+		c = reassembleAsPredicatedCall(c, sections.text.ptr + papyrusUtilOffsets.fflushCall2, &global.inhibitLogFileFlushing, &global.logFileFlushElisionCounter);
+
+		c = lea64Trampoline(c, sections.text.ptr + papyrusUtilOffsets.supplySaveCallbackLEA, cast(const(ubyte)*) &fileFlushAggregator_papyrusUtilSaveCallback);
+		c = lea64Trampoline(c, sections.text.ptr + papyrusUtilOffsets.supplyLoadCallbackLEA, cast(const(ubyte)*) &fileFlushAggregator_papyrusUtilLoadCallback);
+
+		makeMemoryRegionExecutable(code, 4.KB);
+
+		FlushInstructionCache(thisProcess, code, 4.KB);
+
+		global.patchedPapyrusUtil = true;
+	}
+}
 
 
 @optStrategy("minsize")

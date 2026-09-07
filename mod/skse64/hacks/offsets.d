@@ -6,7 +6,7 @@ module skse64.hacks.offsets;
 import game;
 
 
-enum VersionedOffsets versionedOffsets = {
+enum SKSE64VersionedOffsets skse64VersionedOffsets = {
 	  globalSKSE64Provider: {ae7_104: 0x0000da98, ae7_99: 0x0000da98, ae1170: 0x0000dac0, ae1130: 0x0000b468, ae640: 0x0000b470, ae353: 0x0000b438, se: 0x0000dad8, vr: 0x0000de20, gog: 0x0000b140, gog659: 0x0000b488}, /+ .rdata +/
 	         loadedPlugins: {ae7_104: 0x00001a00, ae7_99: 0x00001a00, ae1170: 0x00001a00, ae1130: 0x00001ae0, ae640: 0x00001ae0, ae353: 0x00001ae0, se: 0x00001a08, vr: 0x00014178, gog: 0x00001ae0, gog659: 0x00001ae0}, /+ .data +/
 	     pluginBeingLoaded: {ae7_104: 0x00000000, ae7_99: 0x00000000, ae1170: 0x00000000, ae1130: 0x0000fae8, ae640: 0x0000faa8, ae353: 0x0000faa8, se: 0x00000000, vr: 0x00000000, gog: 0x0000f928, gog659: 0x0000fa98}, /+ .data +/
@@ -32,6 +32,18 @@ enum VersionedOffsets versionedOffsets = {
 	   emitSaveMessageCall: {ae7_104: 0x0000f35d, ae7_99: 0x0000f35d, ae1170: 0x0000f35d, ae1130: 0x0000f61d, ae640: 0x0000f56d, ae353: 0x0000f56d, se: 0x0000f42d, vr: 0x000107c3, gog: 0x0000fa1d, gog659: 0x0000f3fd}, /+ .text +/
 	emitPreLoadMessageCall: {ae7_104: 0x0000f41f, ae7_99: 0x0000f41f, ae1170: 0x0000f41f, ae1130: 0x0000f6df, ae640: 0x0000f62f, ae353: 0x0000f62f, se: 0x0000f4ef, vr: 0x0001087d, gog: 0x0000fadf, gog659: 0x0000f4bf}, /+ .text +/
 	emitProLoadMessageCall: {ae7_104: 0x0000f463, ae7_99: 0x0000f463, ae1170: 0x0000f463, ae1130: 0x0000f722, ae640: 0x0000f672, ae353: 0x0000f672, se: 0x0000f532, vr: 0x000108c3, gog: 0x0000fb22, gog659: 0x0000f502}, /+ .text +/
+};
+
+
+enum PapyrusUtilVersionedOffsets papyrusUtilVersionedOffsets = {
+	    logFileStdioHandle: {ae7_104: 0x0000b970, ae7_99: 0x0000b970, ae1170: 0x0000b970, ae1130: 0x0000b970, ae640: 0x0000b970, ae353: 0x0000a4b0, se: 0x00009698, vr: 0x00009798, gog: 0x0000b970, gog659: 0x0000b970}, /+ .data +/
+	 supplySaveCallbackLEA: {ae7_104: 0x00065c8a, ae7_99: 0x00065c8a, ae1170: 0x00065c3a, ae1130: 0x00065d09, ae640: 0x00065cb9, ae353: 0x00064099, se: 0x000661ab, vr: 0x00062bfb, gog: 0x00065c3a, gog659: 0x00065cb9}, /+ .text +/
+	 supplyLoadCallbackLEA: {ae7_104: 0x00065ca1, ae7_99: 0x00065ca1, ae1170: 0x00065c51, ae1130: 0x00065d20, ae640: 0x00065cd0, ae353: 0x000640b0, se: 0x000661c2, vr: 0x00062c12, gog: 0x00065c51, gog659: 0x00065cd0}, /+ .text +/
+	versionNumberImmediate: {ae7_104: 0x00088821, ae7_99: 0x00088821, ae1170: 0x000882f1, ae1130: 0x00088421, ae640: 0x000883d1, ae353: 0x000867b1, se: 0x000828b1, vr: 0x0007ec41, gog: 0x000882f1, gog659: 0x000883d1}, /+ .text +/
+	                fflush: {ae7_104: 0x000de78c, ae7_99: 0x000de78c, ae1170: 0x000de25c, ae1130: 0x000de38c, ae640: 0x000de33c, ae353: 0x000dc03c, se: 0x000d2dc8, vr: 0x000cf1f8, gog: 0x000de25c, gog659: 0x000de33c}, /+ .text +/
+	           fflushCall0: {ae7_104: 0x000a5cc1, ae7_99: 0x000a5cc1, ae1170: 0x000a5791, ae1130: 0x000a58c1, ae640: 0x000a5871, ae353: 0x000a3571, se: 0x0009f221, vr: 0x0009b501, gog: 0x000a5791, gog659: 0x000a5871}, /+ .text +/
+	           fflushCall1: {ae7_104: 0x000a5c5c, ae7_99: 0x000a5c5c, ae1170: 0x000a572c, ae1130: 0x000a585c, ae640: 0x000a580c, ae353: 0x000a350c, se: 0x0009f1bc, vr: 0x0009b49c, gog: 0x000a572c, gog659: 0x000a580c}, /+ .text +/
+	           fflushCall2: {ae7_104: 0x000a5d35, ae7_99: 0x000a5d35, ae1170: 0x000a5805, ae1130: 0x000a5935, ae640: 0x000a58e5, ae353: 0x000a35e5, se: 0x0009f295, vr: 0x0009b575, gog: 0x000a5805, gog659: 0x000a58e5}, /+ .text +/
 };
 
 
@@ -71,7 +83,7 @@ struct VersionedOffset
 }
 
 
-struct VersionedOffsets
+struct SKSE64VersionedOffsets
 {
 	VersionedOffset globalSKSE64Provider;
 	VersionedOffset loadedPlugins;
@@ -103,9 +115,9 @@ struct VersionedOffsets
 
 struct SKSE64Offsets
 {
-	static foreach (member; __traits(allMembers, VersionedOffsets))
+	static foreach (member; __traits(allMembers, SKSE64VersionedOffsets))
 	{
-		static if (__traits(getMember, __traits(getMember, versionedOffsets, member), targetedGameTag) != 0)
+		static if (__traits(getMember, __traits(getMember, skse64VersionedOffsets, member), targetedGameTag) != 0)
 		{
 			mixin("uint ", member, ";");
 		}
@@ -119,7 +131,45 @@ enum SKSE64Offsets skse64Offsets = ()
 
 	static foreach (member; __traits(allMembers, SKSE64Offsets))
 	{
-		__traits(getMember, offsets, member) = __traits(getMember, __traits(getMember, versionedOffsets, member), targetedGameTag);
+		__traits(getMember, offsets, member) = __traits(getMember, __traits(getMember, skse64VersionedOffsets, member), targetedGameTag);
+	}
+
+	return offsets;
+}();
+
+
+struct PapyrusUtilVersionedOffsets
+{
+	VersionedOffset logFileStdioHandle;
+	VersionedOffset supplySaveCallbackLEA;
+	VersionedOffset supplyLoadCallbackLEA;
+	VersionedOffset versionNumberImmediate;
+	VersionedOffset fflush;
+	VersionedOffset fflushCall0;
+	VersionedOffset fflushCall1;
+	VersionedOffset fflushCall2;
+}
+
+
+struct PapyrusUtilOffsets
+{
+	static foreach (member; __traits(allMembers, PapyrusUtilVersionedOffsets))
+	{
+		static if (__traits(getMember, __traits(getMember, papyrusUtilVersionedOffsets, member), targetedGameTag) != 0)
+		{
+			mixin("uint ", member, ";");
+		}
+	}
+}
+
+
+enum PapyrusUtilOffsets papyrusUtilOffsets = ()
+{
+	PapyrusUtilOffsets offsets;
+
+	static foreach (member; __traits(allMembers, PapyrusUtilOffsets))
+	{
+		__traits(getMember, offsets, member) = __traits(getMember, __traits(getMember, papyrusUtilVersionedOffsets, member), targetedGameTag);
 	}
 
 	return offsets;

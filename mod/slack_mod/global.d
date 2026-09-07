@@ -29,6 +29,10 @@ __gshared GlobalState global;
 enum bool observingPluginFileNameViaCall = targetedGameVersion < 0x01_06_000_0;
 
 
+static assert(targetedGameVersion <= 0x01_07_068_0, "Remember to update the condition for `patchingPapyrusUtilIsSupported`.");
+enum bool patchingPapyrusUtilIsSupported = targetedGameVersion <= 0x01_07_068_0;
+
+
 struct GlobalState
 {
 	DynamicallyLinked linked;
@@ -41,7 +45,8 @@ struct GlobalState
 	bool anyPluginCosaveHandlerThrewAnException;
 	bool recoverableErrorsOccurred;
 	bool unrecoverableErrorsOccurred;
-align(8)
+	bool foundPapyrusUtil;
+	bool patchedPapyrusUtil;
 	ubyte inhibitLogFileFlushing;
 	SpecialPlugin currentSpecialPluginBeingLoaded;
 
@@ -107,6 +112,14 @@ struct ResolvedAddresses
 	extern(C) int function (scope void* file) nothrow @nogc skseFFlush;
 	const(ubyte)* skseDLL;
 
+	static if (patchingPapyrusUtilIsSupported)
+	{
+		extern(C++) ubyte function (ulong rcx) papyrusUtilSaveCallback;
+		extern(C++) ubyte function (ulong rcx) papyrusUtilLoadCallback;
+		void** papyrusUtilLogFileStdioHandle;
+		extern(C) int function (scope void* file) nothrow @nogc papyrusUtilFFlush;
+	}
+
 	version (SLACKVerificationMode)
 	{
 		typeof(SerialisationProvider.beginRecord) skseSerialisationBeginRecord;
@@ -152,7 +165,8 @@ struct DynamicallyLinked
 enum SpecialPlugin : ubyte
 {
 	none,
-	stbWidgets
+	stbWidgets,
+	papyrusUtil,
 }
 
 

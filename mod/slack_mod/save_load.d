@@ -586,6 +586,29 @@ ubyte fileFlushAggregator_skseEmitPostLoadMessage (AliasSeq!(uint, uint, size_t,
 }
 
 
+static if (patchingPapyrusUtilIsSupported)
+{
+	ubyte fileFlushAggregator_papyrusUtilSaveCallback (AliasSeq!ulong arguments)
+	{
+		enum string fflush = q{global.addressOf.papyrusUtilFFlush};
+		enum string logFileStdioHandle = q{global.addressOf.papyrusUtilLogFileStdioHandle};
+		enum string call = q{global.addressOf.papyrusUtilSaveCallback};
+		enum bool eagerlyFlush = true;
+		mixin(fileFlushAggregator);
+	}
+
+
+	ubyte fileFlushAggregator_papyrusUtilLoadCallback (AliasSeq!ulong arguments)
+	{
+		enum string fflush = q{global.addressOf.papyrusUtilFFlush};
+		enum string logFileStdioHandle = q{global.addressOf.papyrusUtilLogFileStdioHandle};
+		enum string call = q{global.addressOf.papyrusUtilLoadCallback};
+		enum bool eagerlyFlush = true;
+		mixin(fileFlushAggregator);
+	}
+}
+
+
 enum string fileFlushAggregator =
 q{
 	extern(C++)
