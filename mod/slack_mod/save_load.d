@@ -761,6 +761,18 @@ HANDLE createCosaveFile (scope ref char[1024] stringBuffer) @trusted nothrow @no
 			blit(s, message.ptr, message.length);
 			s += message.length;
 		}
+		else if (error == ERROR_INVALID_NAME)
+		{
+			enum string message = (
+				  "\r\n\r\n"
+				~ invalidPathErrorMessage!char
+				~ "\r\n\r\n"
+				~ "If the name of the cell/area you are in contains any of those forbidden characters, move to a different cell to be able to save the game.\r\n\r\n"
+				~ "If your player-character's name contains any of those forbidden characters, you should change your player-character's name via the \"showracemenu\" console-command."
+			);
+			blit(s, message.ptr, message.length);
+			s += message.length;
+		}
 
 		*s = '\0';
 
@@ -1768,6 +1780,12 @@ enum immutable(Char[]) pathNotFoundErrorMessage (Char) = (
 );
 
 
+enum immutable(Char[]) invalidPathErrorMessage (Char) = (
+	  "This error indicates that the cosave's file name contains characters that are forbidden by Windows.\r\n\r\n"
+	~ "The forbidden characters are: ? : | < > * \""
+);
+
+
 pragma(inline, true)
 HANDLE openCosaveFile (scope ref char[1024] stringBuffer) @trusted nothrow @nogc
 {
@@ -1831,6 +1849,17 @@ HANDLE openCosaveFile (scope ref char[1024] stringBuffer) @trusted nothrow @nogc
 		else if (error == ERROR_PATH_NOT_FOUND)
 		{
 			enum string message = "\r\n\r\n" ~ pathNotFoundErrorMessage!char;
+			blit(s, message.ptr, message.length);
+			s += message.length;
+		}
+		else if (error == ERROR_INVALID_NAME)
+		{
+			enum string message = (
+				  "\r\n\r\n"
+				~ invalidPathErrorMessage!char
+				~ "\r\n\r\n"
+				~ "If the name of your cosave file—by some singular means—contains any of those forbidden characters, you should remove those characters from the file name."
+			);
 			blit(s, message.ptr, message.length);
 			s += message.length;
 		}

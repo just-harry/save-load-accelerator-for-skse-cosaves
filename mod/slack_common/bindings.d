@@ -173,6 +173,7 @@ version (Windows)
 	enum ushort ERROR_FILE_NOT_FOUND = 2;
 	enum ushort ERROR_PATH_NOT_FOUND = 3;
 	enum ushort ERROR_INSUFFICIENT_BUFFER = 122;
+	enum ushort ERROR_INVALID_NAME = 123;
 	enum ushort ERROR_NO_MORE_ITEMS = 259;
 
 
