@@ -1,6 +1,19 @@
 
 # Save & Load Accelerator for SKSE Cosaves: Changelog
 
+## Version 1.5.0 (2026-09-07)
+
+The nineteenth release of this plugin, the changes are as follows:
+- Log file flushes performed by SKSE, when saving and loading the game, are now aggregated into a single flush (with appropriate safeguards in place to ensure that the log file is flushed should an error occur). \
+SKSE flushes its log file three times for each ESL/ESP/ESM plugin that is active, and so this optimisation typically reduces the time taken for SKSE to save/load its internal data by several milliseconds for large mod lists (on some machines this may actually reduce the time taken by a couple of seconds). \
+Additionally, as PapyrusUtil SE inherited its logging code from SKSE (including the three flushes per active plugin), the same optimisation is applied to PapyrusUtil SE if it is installed and up-to-date.
+- The presence of a misplaced "|" character in the console for saving profiling, with parallel-saving disabled, is fixed.
+- The error message for an invalid file-name now contains an explanatory description.
+
+---
+
+The song recommendation for this release is ["A-Yah-YAh-YaH-YAH!!" by RD-Sounds, as sung by ユリカ (as opposed to the version sung by めらみぽっぷ)](https://www.youtube.com/watch?v=UUHZ64QtKYg).
+
 ## Version 1.4.2 (2026-09-03)
 
 The eighteenth release of this plugin, the changes are as follows:
