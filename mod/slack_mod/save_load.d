@@ -1189,15 +1189,38 @@ void saveCosaveSerial () nothrow @nogc
 		uint cosaveSize = cast(uint) (endOfData - base);
 		uint sizeStringLength = formatSize(cast(char[64]) stringBuffer[0 .. 32], cosaveSize);
 
-		global.addressOf.skseConsolePrint(
-			"S.L.A.C.K. | Cosave save timing | Cosave size: %*s | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
-			sizeStringLength,
-			stringBuffer.ptr,
-			cast(double) (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[3] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
-		);
+		double duration0 = cast(double) (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration1 = cast(double) (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration2 = cast(double) (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration3 = cast(double) (time[3] - time[0]) * global.performanceFrequencyMillisecondMultiplier;
+
+		int fileFlushesElided = void;
+
+		if (effectiveLogFileFlushElisionCounter(&fileFlushesElided))
+		{
+			global.addressOf.skseConsolePrint(
+				"S.L.A.C.K. | Cosave save timing | Log file flushes elided: %5d | Cosave size: %*s | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
+				fileFlushesElided,
+				sizeStringLength,
+				stringBuffer.ptr,
+				duration0,
+				duration1,
+				duration2,
+				duration3,
+			);
+		}
+		else
+		{
+			global.addressOf.skseConsolePrint(
+				"S.L.A.C.K. | Cosave save timing | Cosave size: %*s | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
+				sizeStringLength,
+				stringBuffer.ptr,
+				duration0,
+				duration1,
+				duration2,
+				duration3,
+			);
+		}
 	}
 
 	errorReportingEpilogue!(
@@ -1444,17 +1467,42 @@ waitingForSaveToFinish:
 		uint cosaveSize = cast(uint) (endOfData - base);
 		uint sizeStringLength = formatSize(cast(char[64]) stringBuffer[0 .. 32], cosaveSize);
 
-		global.addressOf.skseConsolePrint(
-			"S.L.A.C.K. | Cosave parallel save timing | Threads used: %u | Retries required: %u | Cosave size: %*s | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
-			global.configuration.parallelSavingThreadCount,
-			retryCount,
-			sizeStringLength,
-			stringBuffer.ptr,
-			cast(double) (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[3] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
-		);
+		double duration0 = (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration1 = (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration2 = (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration3 = (time[3] - time[0]) * global.performanceFrequencyMillisecondMultiplier;
+
+		int fileFlushesElided = void;
+
+		if (effectiveLogFileFlushElisionCounter(&fileFlushesElided))
+		{
+			global.addressOf.skseConsolePrint(
+				"S.L.A.C.K. | Cosave parallel save timing | Threads used: %u | Retries required: %u | Log file flushes elided: %5d | Cosave size: %*s | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
+				global.configuration.parallelSavingThreadCount,
+				retryCount,
+				fileFlushesElided,
+				sizeStringLength,
+				stringBuffer.ptr,
+				duration0,
+				duration1,
+				duration2,
+				duration3,
+			);
+		}
+		else
+		{
+			global.addressOf.skseConsolePrint(
+				"S.L.A.C.K. | Cosave parallel save timing | Threads used: %u | Retries required: %u | Cosave size: %*s | Creating file: %7.3f ms | Plugin callbacks: %7.3f ms | Writing file: %7.3f ms | Total: %7.3f ms",
+				global.configuration.parallelSavingThreadCount,
+				retryCount,
+				sizeStringLength,
+				stringBuffer.ptr,
+				duration0,
+				duration1,
+				duration2,
+				duration3,
+			);
+		}
 	}
 
 	errorReportingEpilogue!(
@@ -2230,15 +2278,38 @@ void loadCosaveSerial () nothrow @nogc
 	{
 		uint sizeStringLength = formatSize(cast(char[64]) stringBuffer[0 .. 32], cast(uint) cosaveFileSize);
 
-		global.addressOf.skseConsolePrint(
-			"S.L.A.C.K. | Cosave load timing | Cosave size: %*s | Opening file: %7.3f ms | Reading file: %7.3f ms | Plugin callbacks: %7.3f ms | Total: %7.3f ms",
-			sizeStringLength,
-			stringBuffer.ptr,
-			cast(double) (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier,
-			cast(double) (time[3] - time[0]) * global.performanceFrequencyMillisecondMultiplier,
-		);
+		double duration0 = cast(double) (time[1] - time[0]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration1 = cast(double) (time[2] - time[1]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration2 = cast(double) (time[3] - time[2]) * global.performanceFrequencyMillisecondMultiplier;
+		double duration3 = cast(double) (time[3] - time[0]) * global.performanceFrequencyMillisecondMultiplier;
+
+		int fileFlushesElided = void;
+
+		if (effectiveLogFileFlushElisionCounter(&fileFlushesElided))
+		{
+			global.addressOf.skseConsolePrint(
+				"S.L.A.C.K. | Cosave load timing | Log file flushes elided: %5d | Cosave size: %*s | Opening file: %7.3f ms | Reading file: %7.3f ms | Plugin callbacks: %7.3f ms | Total: %7.3f ms",
+				fileFlushesElided,
+				sizeStringLength,
+				stringBuffer.ptr,
+				duration0,
+				duration1,
+				duration2,
+				duration3,
+			);
+		}
+		else
+		{
+			global.addressOf.skseConsolePrint(
+				"S.L.A.C.K. | Cosave load timing | Cosave size: %*s | Opening file: %7.3f ms | Reading file: %7.3f ms | Plugin callbacks: %7.3f ms | Total: %7.3f ms",
+				sizeStringLength,
+				stringBuffer.ptr,
+				duration0,
+				duration1,
+				duration2,
+				duration3,
+			);
+		}
 	}
 
 	errorReportingEpilogue!(
@@ -2304,6 +2375,25 @@ version (SLACKVerificationMode)
 			endOfFile.sizeof,
 			FILE_INFORMATION_CLASS.FileEndOfFileInformation
 		);
+	}
+}
+
+
+pragma(inline, true)
+bool effectiveLogFileFlushElisionCounter (scope int* fileFlushesElided) nothrow @nogc
+{
+	if (global.configuration.aggregateFileFlushingEnabled)
+	{
+		uint decrement = (
+			  mixin(patchingPapyrusUtilIsSupported ? q{global.patchedPapyrusUtil} : q{0})
+			+ ((global.configuration.flags & ConfigurationLongLived.Flags.aggregateFileFlushingInSKSE) != 0)
+		);
+		*fileFlushesElided = global.logFileFlushElisionCounter - decrement;
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 
