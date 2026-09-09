@@ -1,6 +1,18 @@
 
 # Save & Load Accelerator for SKSE Cosaves: Changelog
 
+## Version 1.5.1 (2026-09-09)
+
+The twentieth release of this plugin, the changes are as follows:
+
+- The stratagem for allocating memory closely to the SKSE DLL has been made even more robust.
+- An attempt to improve the formatting of error messages, in v1.4.0, which accidentally caused an entire category of error messages to be entirely blank, is now fixed. Whoops.
+- Coincidentally, the previous two bugs had been fixed also in v1.1.0, except they had different causes that time 'round.
+
+---
+
+The song recommendation for this release is ["旅人 / 裏命" by umano (a tragically unknown musician)](https://www.youtube.com/watch?v=Xe4iCmp2HzQ). (Seriously, go give 'em a listen.)
+
 ## Version 1.5.0 (2026-09-07)
 
 The nineteenth release of this plugin, the changes are as follows:
