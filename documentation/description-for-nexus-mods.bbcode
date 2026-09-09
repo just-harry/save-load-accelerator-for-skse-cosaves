@@ -107,7 +107,7 @@ So what this plugin does to remedy this pretty state of things is it reimplement
 (Some trickery with virtual-memory and an vectored-exception-handler is used to commit the region of memory gradually, without incurring the overhead of any bounds-checks.)
 
 For loading, the situation is better: typically each call to [i]GetNextRecordInfo[/i] and [i]ReadRecordData[/i] results in only one transitive call of [i]ReadFile[/i].
-The optimisation this plugin makes is similarly obvious: the file is read into memory all at once, and the API functions simply blit the data into the buffer supplied by the caller.[/spoiler]
+The optimisation this plugin makes is similarly obvious: the file is read into memory all at once, and the API functions simply blit the data into the buffer supplied by the caller.
 
 
 There is one other small inefficiency in SKSE's code that this plugin addresses.
@@ -120,7 +120,7 @@ On my machine, with roughly a thousand plugins active, this results in file flus
 
 To lessen the time spent flushing the log file, this plugin hooks SKSE's calls of [i]fflush[/i] and inhibits them when the game is being saved or loaded.
 SEH handlers are used to ensure that the log file is flushed should an error occur.
-(PapyrusUtil SE (a SKSE plugin) inherits its logging implementation from SKSE, and also reuses SKSE's code for saving/loading the plugin list: as such it exhibits the same log file flushing behaviour as SKSE. This plugin applies the same optimisation to PapyrusUtil SE as it does to SKSE.)
+(PapyrusUtil SE (a SKSE plugin) inherits its logging implementation from SKSE, and also reuses SKSE's code for saving/loading the plugin list: as such it exhibits the same log file flushing behaviour as SKSE. This plugin applies the same optimisation to PapyrusUtil SE as it does to SKSE.)[/spoiler]
 
 [size=4][b][u]Source-Code[/u][/b][/size]
 The source-code for this plugin is available at [url=https://github.com/just-harry/save-load-accelerator-for-skse-cosaves]https://github.com/just-harry/save-load-accelerator-for-skse-cosaves[/url].
