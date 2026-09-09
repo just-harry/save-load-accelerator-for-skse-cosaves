@@ -27,15 +27,17 @@ void call_and_handle_exception (
 uint8_t try_except_ubyte (
 	size_t c0,
 	uint8_t (*call) (size_t),
-	int (*exceptHandler) (void)
+	void (*exceptHandler) (void)
 )
 {
 	__try
 	{
 		return call(c0);
 	}
-	__except (exceptHandler())
-	{}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		exceptHandler();
+	}
 }
 
 
@@ -46,15 +48,17 @@ uint8_t try_except_ubyte (
 	uint32_t c3,
 	size_t c4,
 	uint8_t (*call) (uint32_t, uint32_t, size_t, uint32_t, size_t),
-	int (*exceptHandler) (void)
+	void (*exceptHandler) (void)
 )
 {
 	__try
 	{
 		return call(c0, c1, c2, c3, c4);
 	}
-	__except (exceptHandler())
-	{}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		exceptHandler();
+	}
 }
 
 

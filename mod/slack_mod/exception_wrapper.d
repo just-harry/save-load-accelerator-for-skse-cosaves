@@ -24,7 +24,7 @@ extern(C++)
 	ubyte try_except_ubyte (
 		size_t,
 		scope ubyte function (size_t) call,
-		scope int function () handler,
+		scope void function () handler,
 	) nothrow @nogc;
 
 
@@ -35,7 +35,7 @@ extern(C++)
 		uint,
 		size_t,
 		scope ubyte function (uint, uint, size_t, uint, size_t) call,
-		scope int function () handler,
+		scope void function () handler,
 	) nothrow @nogc;
 
 

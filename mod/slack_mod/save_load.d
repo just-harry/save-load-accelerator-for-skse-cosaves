@@ -622,12 +622,11 @@ q{
 		}
 
 		extern(C++)
-		static int except__ ()
+		static void except__ ()
 		{
 			global.inhibitLogFileFlushing = false;
 			/+ Flush the log file if something has gone wrong, to avoid a truncated log. +/
 			mixin(fflush)(*mixin(logFileStdioHandle));
-			return EXCEPTION_EXECUTE_HANDLER;
 		}
 
 		return try_except_ubyte(
