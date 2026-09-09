@@ -2762,7 +2762,7 @@ void logDetailsAfterCatchingException (
 	enum string versionString = (
 		   ">>>>>>>>>> | Game version: " ~ targetedGameVersionString
 		 ~ " | SKSE version: " ~ expectedSKSE64VersionString
-		 ~ " | S.L.A.C.K. version: 1.5.0"
+		 ~ " | S.L.A.C.K. version: 1.5.1"
 	);
 
 	global.addressOf.skseConsolePrint(versionString.ptr);
