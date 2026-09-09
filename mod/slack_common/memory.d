@@ -188,15 +188,31 @@ in (*address == null)
 			{
 				return 0;
 			}
+
+			if (error == STATUS_CONFLICTING_ADDRESSES)
+			{
+				/+ If another thread claimed this span before us,
+				   we should avoid advancing to the end of the region
+				   as it may be the final free region of the process's address-space,
+				   and the advancement would thus effect a spurious failure.
+				   But if we don't advance at all we can end up in an infinite loop,
+				   so we'll advance by the minimum possible distance. +/
+
+				base += 64.KB;
+				goto proceedWithIncrementedBase;
+			}
 		}
 
 		base = info.BaseAddress + info.RegionSize;
-
+	proceedWithIncrementedBase:
 		if (base > tail)
 		{
 			return STATUS_NO_MEMORY;
 		}
 	}
+
+	/+ Frontend is dumb in the (glorious) presence of goto. +/
+	assert(false);
 }
 
 
