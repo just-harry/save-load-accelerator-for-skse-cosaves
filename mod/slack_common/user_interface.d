@@ -156,9 +156,7 @@ void reportErrorToUser (Char) (
 in (message.length < stringBuffer.length)
 in (errorCode == 0 || ((stringBuffer.length >= 30) & (stringBuffer.length - 29 > message.length)))
 {
-	stringBuffer = formatErrorWithCode(stringBuffer, message, errorCode);
-	*stringBuffer.ptr = '\0';
-
+	*formatErrorWithCode(stringBuffer, message, errorCode).ptr = '\0';
 	reportErrorToUser(stringBuffer.ptr, flags);
 }
 
