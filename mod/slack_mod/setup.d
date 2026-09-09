@@ -370,7 +370,7 @@ bool setUpEverythingWithSKSEDLL (scope ref wchar[512] stringBuffer, scope ubyte*
 
 	void[] skseAdjacentMemorySlice = void;
 
-	if (allocateImageAdjacentMemory(&skseAdjacentMemorySlice, sections) == 0)
+	if ((error = allocateImageAdjacentMemory(&skseAdjacentMemorySlice, sections)) == 0)
 	{
 		goto allocatedSKSEAdjacentMemory;
 	}
