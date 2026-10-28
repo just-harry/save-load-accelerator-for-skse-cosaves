@@ -36,6 +36,8 @@ uint8_t try_finally_if_exception_raised_ubyte (
 	}
 	__except (exceptHandler(), EXCEPTION_CONTINUE_SEARCH)
 	{}
+
+	return 0;
 }
 
 
@@ -55,6 +57,8 @@ uint8_t try_finally_if_exception_raised_ubyte (
 	}
 	__except (exceptHandler(), EXCEPTION_CONTINUE_SEARCH)
 	{}
+
+	return 0;
 }
 
 
@@ -72,6 +76,8 @@ uint8_t try_finally_ubyte (
 	{
 		finallyHandler();
 	}
+
+	return 0;
 }
 
 
@@ -93,5 +99,7 @@ uint8_t try_finally_ubyte (
 	{
 		finallyHandler();
 	}
+
+	return 0;
 }
 
