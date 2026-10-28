@@ -25,7 +25,7 @@ Param
 			$DVersions = @(),
 
 	[Parameter()]
-			$ReleaseTag = <#release-version#>'v1.5.1'
+			$ReleaseTag = <#release-version#>'v1.5.2'
 )
 
 . "$PSScriptRoot/scripts/common.ps1"

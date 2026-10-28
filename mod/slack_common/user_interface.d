@@ -14,7 +14,7 @@ import slack_common.text;
 import slack_common.threading;
 
 
-enum immutable(Char[]) errorDialogTitle (Char) = "Save & Load Accelerator for SKSE Cosaves v1.5.1 Error";
+enum immutable(Char[]) errorDialogTitle (Char) = "Save & Load Accelerator for SKSE Cosaves v1.5.2 Error";
 
 
 alias messageBox (Char) = mixin(Char.sizeof == 2 ? q{MessageBoxW} : q{MessageBoxA});
