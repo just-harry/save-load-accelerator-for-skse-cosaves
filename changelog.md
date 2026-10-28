@@ -1,6 +1,16 @@
 
 # Save & Load Accelerator for SKSE Cosaves: Changelog
 
+## Version 1.5.2 (2026-10-28)
+
+The twenty-first release of this plugin, the changes are as follows:
+
+- The functionality for aggregating log file flushes, when saving and loading the game, no longer swallows exceptions that it shouldn't; thanks to Illustar0 for drawing my attention to this.
+
+---
+
+The song recommendation for this release is ["A symphony of horror and confusion" (and the chorus that follows on from it) from Handel's "Samson" as performed by The English Concert under Harry Bicket](https://www.youtube.com/watch?v=tua5wVlYmmo&t=9051s).
+
 ## Version 1.5.1 (2026-09-09)
 
 The twentieth release of this plugin, the changes are as follows:
