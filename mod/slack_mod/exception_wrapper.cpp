@@ -24,7 +24,7 @@ void call_and_handle_exception (
    but I couldn't get the explicit template instantiations to play nicely with LTO. */
 
 
-uint8_t try_except_ubyte (
+uint8_t try_finally_if_exception_raised_ubyte (
 	size_t c0,
 	uint8_t (*call) (size_t),
 	void (*exceptHandler) (void)
@@ -34,14 +34,12 @@ uint8_t try_except_ubyte (
 	{
 		return call(c0);
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		exceptHandler();
-	}
+	__except (exceptHandler(), EXCEPTION_CONTINUE_SEARCH)
+	{}
 }
 
 
-uint8_t try_except_ubyte (
+uint8_t try_finally_if_exception_raised_ubyte (
 	uint32_t c0,
 	uint32_t c1,
 	size_t c2,
@@ -55,10 +53,8 @@ uint8_t try_except_ubyte (
 	{
 		return call(c0, c1, c2, c3, c4);
 	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		exceptHandler();
-	}
+	__except (exceptHandler(), EXCEPTION_CONTINUE_SEARCH)
+	{}
 }
 
 

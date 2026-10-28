@@ -21,14 +21,14 @@ extern(C++)
 	) nothrow @nogc;
 
 
-	ubyte try_except_ubyte (
+	ubyte try_finally_if_exception_raised_ubyte (
 		size_t,
 		scope ubyte function (size_t) call,
 		scope void function () handler,
 	) nothrow @nogc;
 
 
-	ubyte try_except_ubyte (
+	ubyte try_finally_if_exception_raised_ubyte (
 		uint,
 		uint,
 		size_t,

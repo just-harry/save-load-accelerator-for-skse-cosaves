@@ -622,17 +622,17 @@ q{
 		}
 
 		extern(C++)
-		static void except__ ()
+		static void finallyIfExceptionRaised ()
 		{
 			global.inhibitLogFileFlushing = false;
 			/+ Flush the log file if something has gone wrong, to avoid a truncated log. +/
 			mixin(fflush)(*mixin(logFileStdioHandle));
 		}
 
-		return try_except_ubyte(
+		return try_finally_if_exception_raised_ubyte(
 			arguments_,
 			&try__,
-			&except__
+			&finallyIfExceptionRaised
 		);
 	}
 
